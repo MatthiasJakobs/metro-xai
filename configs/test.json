@@ -1,0 +1,29 @@
+{
+    "model_name": "AE_MAD",
+    "model_class": "AE_MAD",
+    "autoencoder": true,
+    "model_params": {
+        "L": 1800,
+        "n_channels": 8,
+        "embedding_dim": 4,
+        "n_kernel": 6,
+        "kernel_size": 7
+    },
+    "hyperparameters": {
+        "max_epochs": 100,
+        "lr": 0.001,
+        "random_state": 218171,
+        "verbose": true,
+        "batch_size": 64,
+        "train_split": "TSValidSplit",
+        "callbacks": [
+            {
+                "name": "EarlyStopping",
+                "parameters": {
+                    "patience": 15,
+                    "load_best": true
+                }
+            }
+        ]
+    }
+}

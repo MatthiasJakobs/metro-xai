@@ -1,0 +1,4 @@
+torch
+seedpy
+numpy
+git+https://github.com/MatthiasJakobs/tsx@dev
