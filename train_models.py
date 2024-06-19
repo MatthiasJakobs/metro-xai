@@ -3,17 +3,19 @@ import torch
 import torch.nn as nn
 import numpy as np
 import json
+import sys
 from tsx.models import NeuralNetRegressor, TSValidSplit
-from skorch.callbacks import EarlyStopping, LRScheduler
+from skorch.callbacks import EarlyStopping, LRScheduler, GradientNormClipping
 from seedpy import fixedseed
 from os.path import exists
 from os import makedirs
 from generate_chunks import load_data
 
-from models import AE_MAD
+from models import AE_MAD, DeepAE
 
 model_map = {
     'AE_MAD': AE_MAD,
+    'DeepAE': DeepAE,
 }
 
 class ModelTrainer:
@@ -50,6 +52,8 @@ class ModelTrainer:
                     callbacks.append(EarlyStopping(**callback['parameters']))
                 if callback['name'] == 'LRScheduler':
                     callbacks.append(LRScheduler(**callback['parameters']))
+                if callback['name'] == 'GradientNormClipping':
+                    callbacks.append(GradientNormClipping(**callback['parameters']))
             hyperparameters['callbacks'] = callbacks
         
         self.model_class = model_map[config['model_class']]
@@ -106,10 +110,8 @@ class ModelTrainer:
 if __name__ == '__main__':
     train_data, _, test_data, _ = load_data()
 
-    models = ['AE_MAD']
-    for model_name in models:
-        trainer = ModelTrainer(f'configs/{model_name}.json')
-        trainer.fit(train_data)
-        print(model_name, 'train_loss', trainer.calc_loss(train_data, train_data))
-        print(model_name, 'test_loss', trainer.calc_loss(test_data, test_data))
-        print('---')
+    model_name = sys.argv[1]
+    trainer = ModelTrainer(f'configs/{model_name}.json')
+    trainer.fit(train_data)
+    print(model_name, 'train_loss', trainer.calc_loss(train_data, train_data))
+    print(model_name, 'test_loss', trainer.calc_loss(test_data, test_data))

@@ -43,7 +43,8 @@ def failure_list_to_interval(cycle_dates, failures):
     failure_intervals = []
     for failure in failures:
         failure = sorted(failure)
-        from_timestamp = pd.Timestamp(cycle_dates[failure[0]][0])
+        # TODO: I think taking the right hand side of the first warning is correct, but needs to double check
+        from_timestamp = pd.Timestamp(cycle_dates[failure[0]][1])
         to_timestamp = pd.Timestamp(cycle_dates[failure[-1]][1])
         failure_intervals.append(pd.Interval(from_timestamp, to_timestamp, closed='both'))
     return failure_intervals
@@ -101,7 +102,6 @@ def main():
     failures = (output >= 0.5).astype(np.int8)
     print(np.mean(output))
 
-    # TODO: Double check dates. Maybe we need to choose end of each segment as correct timestamp
     print_failures(test_chunk_dates, failures)
 
 if __name__ == '__main__':
