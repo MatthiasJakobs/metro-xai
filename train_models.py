@@ -106,7 +106,10 @@ class ModelTrainer:
 if __name__ == '__main__':
     train_data, _, test_data, _ = load_data()
 
-    trainer = ModelTrainer('configs/test.json')
-    trainer.fit(train_data)
-    print(trainer.calc_loss(train_data, train_data))
-    print(trainer.calc_loss(test_data, test_data))
+    models = ['AE_MAD']
+    for model_name in models:
+        trainer = ModelTrainer(f'configs/{model_name}.json')
+        trainer.fit(train_data)
+        print(model_name, 'train_loss', trainer.calc_loss(train_data, train_data))
+        print(model_name, 'test_loss', trainer.calc_loss(test_data, test_data))
+        print('---')
