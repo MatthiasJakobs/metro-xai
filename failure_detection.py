@@ -83,26 +83,24 @@ def generate_intervals(granularity, start_timestamp, end_timestamp):
 
 
 def main():
-    print('Load data')
-
     train_chunks, training_chunk_dates, test_chunks, test_chunk_dates = load_data()
 
     alpha = 0.05
 
-    print('Load model')
-    model = ModelTrainer('configs/AE_MAD.json').fit()
-    train_errors = model.calc_loss(train_chunks, train_chunks, average=False).mean(axis=(1,2))
-    test_errors = model.calc_loss(test_chunks, test_chunks, average=False).mean(axis=(1,2))
+    for model_name in ['AE_MAD', 'DeepAE_01']:
+        print(model_name)
+        model = ModelTrainer(f'configs/{model_name}.json').fit()
+        train_errors = model.calc_loss(train_chunks, train_chunks, average=False).mean(axis=(1,2))
+        test_errors = model.calc_loss(test_chunks, test_chunks, average=False).mean(axis=(1,2))
 
-    anom = extreme_anomaly(train_errors)
-    binary_output = (test_errors > anom).astype(np.int8)
-    print(np.mean(binary_output))
+        anom = extreme_anomaly(train_errors)
+        binary_output = (test_errors > anom).astype(np.int8)
 
-    output = simple_lowpass_filter(binary_output,alpha)
-    failures = (output >= 0.5).astype(np.int8)
-    print(np.mean(output))
+        output = simple_lowpass_filter(binary_output,alpha)
+        failures = (output >= 0.5).astype(np.int8)
 
-    print_failures(test_chunk_dates, failures)
+        print_failures(test_chunk_dates, failures)
+        print('---')
 
 if __name__ == '__main__':
     main()

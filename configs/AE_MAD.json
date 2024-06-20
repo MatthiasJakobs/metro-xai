@@ -10,7 +10,7 @@
         "kernel_size": 7
     },
     "hyperparameters": {
-        "max_epochs": 500,
+        "max_epochs": 1000,
         "lr": 0.002,
         "random_state": 218171,
         "verbose": true,
