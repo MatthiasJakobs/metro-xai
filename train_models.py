@@ -11,11 +11,12 @@ from os.path import exists
 from os import makedirs
 from generate_chunks import load_data
 
-from models import AE_MAD, DeepAE
+from models import AE_MAD, DeepAE, LSTMAE
 
 model_map = {
     'AE_MAD': AE_MAD,
     'DeepAE': DeepAE,
+    'LSTMAE': LSTMAE
 }
 
 class ModelTrainer:

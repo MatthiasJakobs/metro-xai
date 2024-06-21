@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 
 class AE_MAD(nn.Module):
@@ -76,3 +77,22 @@ class DeepAE(nn.Module):
         reconstruction = self.decoder(embedding)
         reconstruction = self.project_to_output(reconstruction.permute(0,2,1))
         return reconstruction
+
+class LSTMAE(nn.Module):
+
+    def __init__(self, L, n_channels, embedding_dim=16, num_layers=4, dropout=0):
+        super().__init__()
+        self.encoder = nn.LSTM(input_size=n_channels, hidden_size=embedding_dim, batch_first=True, num_layers=num_layers, dropout=dropout)
+        self.decoder = nn.LSTM(input_size=embedding_dim, hidden_size=embedding_dim, batch_first=True, num_layers=num_layers, bidirectional=True, dropout=dropout)
+        self.project_to_output = nn.Linear(2*embedding_dim, n_channels)
+        self.embedding_dim = embedding_dim
+
+    def forward(self, X):
+        n_examples = X.shape[1]
+        _, (hidden, _) = self.encoder(X)
+        latent_vector = hidden[-1]
+        stacked_LV = torch.repeat_interleave(latent_vector, n_examples, dim=1).reshape(-1, n_examples, self.embedding_dim).to(X.device)
+        out, (_, _) = self.decoder(stacked_LV)
+        out = self.project_to_output(out)
+        return out
+        

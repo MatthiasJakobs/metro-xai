@@ -1,0 +1,37 @@
+{
+    "model_name": "DeepAE_02",
+    "model_class": "DeepAE",
+    "autoencoder": true,
+    "model_params": {
+        "L": 1800,
+        "n_channels": 8,
+        "embedding_dim": 16,
+        "n_kernel": 32,
+        "kernel_size": 7,
+        "n_blocks": 7,
+        "skip_connections": true
+    },
+    "hyperparameters": {
+        "max_epochs": 500,
+        "lr": 0.003,
+        "random_state": 218171,
+        "verbose": true,
+        "batch_size": 64,
+        "train_split": "TSValidSplit",
+        "callbacks": [
+            {
+                "name": "EarlyStopping",
+                "parameters": {
+                    "patience": 15,
+                    "load_best": true
+                }
+            },
+            {
+                "name": "GradientNormClipping",
+                "parameters": {
+                    "gradient_clip_value": 1.0
+                }
+            }
+        ]
+    }
+}
