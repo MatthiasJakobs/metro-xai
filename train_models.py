@@ -56,6 +56,12 @@ class ModelTrainer:
                 if callback['name'] == 'GradientNormClipping':
                     callbacks.append(GradientNormClipping(**callback['parameters']))
             hyperparameters['callbacks'] = callbacks
+
+        if 'optimizer' in hyperparameters:
+            if hyperparameters['optimizer'] == 'SGD':
+                hyperparameters['optimizer'] = torch.optim.SGD
+            if hyperparameters['optimizer'] == 'Adam':
+                hyperparameters['optimizer'] = torch.optim.Adam
         
         self.model_class = model_map[config['model_class']]
         self.model_params = model_params

@@ -36,12 +36,15 @@ class AE_MAD(nn.Module):
 
 class TemporalBlock(nn.Module):
 
-    def __init__(self, input_filters, n_kernel, kernel_size, skip_connections=True, dilation=1):
+    def __init__(self, input_filters, n_kernel, kernel_size, skip_connections=True, dropout=0.2, dilation=1):
         super().__init__()
         self.block = []
         self.block.append(nn.Conv1d(input_filters, n_kernel, kernel_size, dilation=dilation, padding='same'))
         self.block.append(nn.BatchNorm1d(n_kernel))
         self.block.append(nn.ReLU())
+        self.block.append(nn.Dropout(dropout))
+        self.block.append(nn.Conv1d(n_kernel, n_kernel, kernel_size, dilation=dilation, padding='same'))
+        self.block.append(nn.BatchNorm1d(n_kernel))
         self.block = nn.Sequential(*self.block)
         self.downsample = nn.Conv1d(input_filters, n_kernel, 1) if input_filters != n_kernel else None
 

@@ -1,4 +1,3 @@
-python train_models.py AE_MAD
-python train_models.py DeepAE_01
-python train_models.py DeepAE_02
-python train_models.py DeepAE_03
+python train_models.py LSTM_AE
+python train_models.py TCN_AE
+python train_models.py WAE_NOGAN

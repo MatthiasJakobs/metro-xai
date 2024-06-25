@@ -9,7 +9,8 @@ from train_models import ModelTrainer
 
 
 def extreme_anomaly(dist):
-    q25, q75 = np.quantile(dist, [0.25, 0.75])
+    q25, q75, q90, q95, q99 = np.quantile(dist, [0.25, 0.75, 0.9, 0.95, 0.99])
+    #return q99
     return q75 + 3*(q75-q25)
 
 def simple_lowpass_filter(arr, alpha):
@@ -69,18 +70,6 @@ def print_failures(cycle_dates, output):
         print(interval)
 
 
-##### Results from the main paper #####
-
-def generate_intervals(granularity, start_timestamp, end_timestamp):
-    current_timestamp = start_timestamp
-    interval_length = pd.offsets.DateOffset(**granularity)
-    interval_list = []
-    while current_timestamp < end_timestamp:
-        interval_list.append(pd.Interval(current_timestamp, current_timestamp + interval_length, closed="left"))
-        current_timestamp = current_timestamp + interval_length
-    return interval_list
-
-
 def main():
     train_chunks, training_chunk_dates, test_chunks, test_chunk_dates = load_data()
 
@@ -95,17 +84,15 @@ def main():
     plt.axvline(x=np.datetime64('2022-06-04T11:26:01.422000000'), color='black', linestyle='--')
     # Plot failure two - oil leak
     plt.axvspan(xmin=np.datetime64('2022-07-11T10:10:18.948000000'), xmax=np.datetime64('2022-07-14T10:22:08.046000000'), color='gray', alpha=0.5)
+    plt.axvline(x=np.datetime64('2022-07-13T19:43:52.593000000'), color='black', linestyle='--')
 
-    ensemble_train_error = np.zeros((len(train_chunks)))
-    ensemble_test_error = np.zeros((len(test_chunks)))
-    models = ['DeepAE_01', 'DeepAE_02', 'DeepAE_03', 'LSTM_AE_01']
+    models = ['LSTM_AE', 'TCN_AE', 'WAE_NOGAN']
     for model_name in models:
         print(model_name)
         model = ModelTrainer(f'configs/{model_name}.json').fit()
-        train_errors = model.calc_loss(train_chunks, train_chunks, average=False).mean(axis=(1,2))
+        val_size = int(0.3 * len(train_chunks))
+        train_errors = model.calc_loss(train_chunks[-val_size:], train_chunks[-val_size:], average=False).mean(axis=(1,2))
         test_errors = model.calc_loss(test_chunks, test_chunks, average=False).mean(axis=(1,2))
-        ensemble_train_error += train_errors
-        ensemble_test_error += test_errors
 
         anom = extreme_anomaly(train_errors)
         binary_output = (test_errors > anom).astype(np.int8)
@@ -116,18 +103,6 @@ def main():
 
         print_failures(test_chunk_dates, failures)
         print('---')
-
-    print('Ensemble')
-    train_errors = ensemble_train_error / len(models)
-    test_errors = ensemble_test_error / len(models)
-    
-    anom = extreme_anomaly(train_errors)
-    binary_output = (test_errors > anom).astype(np.int8)
-
-    output = simple_lowpass_filter(binary_output,alpha)
-    failures = (output >= threshold).astype(np.int8)
-    #plt.plot(test_chunk_dates[:, 1], output, label='ensemble')
-    print_failures(test_chunk_dates, failures)
 
     plt.axhline(y=threshold, color='red', linestyle='--', alpha=0.7)
     plt.legend()
@@ -140,7 +115,7 @@ def main():
     plt.xlim(np.datetime64('2022-07-10T22:00:00.000000000'), np.datetime64('2022-07-15T12:00:00.000000000'))
     plt.savefig('test3.png')
 
-    plt.xlim(np.datetime64('2022-06-16T00:00:00.000000000'), np.datetime64('2022-07-01T00:00:00.000000000'))
+    plt.xlim(np.datetime64('2022-06-19T00:00:00.000000000'), np.datetime64('2022-06-21T00:00:00.000000000'))
     plt.savefig('test4.png')
 
 
