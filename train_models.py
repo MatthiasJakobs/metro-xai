@@ -31,6 +31,8 @@ class ModelTrainer:
         self.model_seed = config.get('model_seed', 91721)
         self.model_name = config.get('model_name')
 
+        self.use_channels = np.array(config.get('use_channels', [0, 1, 2, 3, 4, 5, 6, 7]))
+
         model_params = {}
         model_params.update(config['model_params'])
         hyperparameters = {}
@@ -70,16 +72,25 @@ class ModelTrainer:
         makedirs('models', exist_ok=True)
         self.path = f'models/pt2_{self.model_name}.pickle'
 
-    def fit(self, X=None, y=None):
+    def preprocess(self, X):
+        X = X[..., self.use_channels]
+        return X
+
+    def fit(self, X=None, y=None, refit=False):
 
         is_torch = issubclass(self.model_class, nn.Module)
+
+        if X is not None:
+            X = self.preprocess(X)
+        if y is not None:
+            y = self.preprocess(y)
 
         if is_torch:
             with fixedseed(torch, self.model_seed):
                 model = self.model_class(**self.model_params)
             self.model = NeuralNetRegressor(model, **self.hyperparameters)
             
-            if exists(self.path):
+            if exists(self.path) and not refit:
                 self.model.initialize()
                 self.model.load_params(f_params=self.path, f_history=self.path.replace('pickle', 'history'))
             else:
@@ -103,18 +114,38 @@ class ModelTrainer:
     def predict(self, X):
         if self.model is None:
             raise RuntimeError("Model must be fitted before making predictions.")
+        X = self.preprocess(X)
         return self.model.predict(X)
 
     def calc_loss(self, X, y, average=True):
         preds = self.predict(X)
+        y = self.preprocess(y)
         errors = (preds-y)**2
         if not average:
             return errors
         return errors.mean()
 
+def train_cv(config):
+    train_data, _, test_data, _ = load_data()
+    n_splits = 5
+    val_percents = np.linspace(0.1, 0.5, n_splits)
+    val_losses = np.zeros((n_splits))
+    print('===', config, '===')
+    for i in range(n_splits):
+        print(f'Split {i+1}/{n_splits} - {1-val_percents[i]:.2f} train {val_percents[i]:.2f} val')
+        trainer = ModelTrainer(f'configs/{config}.json')
+        trainer.hyperparameters['train_split'] = TSValidSplit(val_percents[i])
+        trainer.hyperparameters['verbose'] = False
+        trainer.fit(train_data, refit=True)
+        val_data = train_data[-int(val_percents[i]*len(train_data)):]
+        val_loss = trainer.calc_loss(val_data, val_data)
+        val_losses[i] = val_loss
 
+    print(val_losses)
+    print('average', np.mean(val_losses))
 
 if __name__ == '__main__':
+    #train_cv('TCN_AE')
     train_data, _, test_data, _ = load_data()
 
     model_name = sys.argv[1]
