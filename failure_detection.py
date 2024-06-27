@@ -86,7 +86,7 @@ def main():
     plt.axvspan(xmin=np.datetime64('2022-07-11T10:10:18.948000000'), xmax=np.datetime64('2022-07-14T10:22:08.046000000'), color='gray', alpha=0.5)
     plt.axvline(x=np.datetime64('2022-07-13T19:43:52.593000000'), color='black', linestyle='--')
 
-    models = ['LSTM_AE', 'TCN_AE', 'WAE_NOGAN']
+    models = ['WAE_NOGAN']
     for model_name in models:
         print(model_name)
         model = ModelTrainer(f'configs/{model_name}.json').fit()
@@ -103,6 +103,18 @@ def main():
 
         print_failures(test_chunk_dates, failures)
         print('---')
+
+    # Try a naive baseline for comparison
+    # Only use Flowmeter variable. Whenever its non-zero, report the squared error
+    print('NaiveFlowmeter')
+    test_errors = np.mean((test_chunks[..., 6])**2, axis=-1)
+    anom = 0
+    binary_output = (test_errors > anom).astype(np.int8)
+
+    output = simple_lowpass_filter(binary_output, alpha)
+    failures = (output >= threshold).astype(np.int8)
+    print_failures(test_chunk_dates, failures)
+    plt.plot(test_chunk_dates[:, 1], output, label='NaiveFlowmeter')
 
     plt.axhline(y=threshold, color='red', linestyle='--', alpha=0.7)
     plt.legend()
