@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 import matplotlib.pyplot as plt
 from operator import itemgetter
 from itertools import groupby
@@ -7,6 +8,14 @@ from os.path import exists
 from generate_chunks import load_data
 from train_models import ModelTrainer
 
+def construct_features(X):
+    # Assume: X.shape = (batch_size, L)
+    avg = np.mean(X, axis=1, keepdims=True)
+    var = np.var(X, axis=1, keepdims=True)
+    mx = np.max(X, axis=1, keepdims=True)
+    mn = np.min(X, axis=1, keepdims=True)
+    #kurt = kurtosis(X, axis=1, keepdims=True)
+    return np.concatenate([avg, var, mx, mn], axis=1)
 
 def extreme_anomaly(dist):
     q25, q75, q90, q95, q99 = np.quantile(dist, [0.25, 0.75, 0.9, 0.95, 0.99])
@@ -68,6 +77,7 @@ def print_failures(cycle_dates, output):
     collated_intervals = collate_intervals(failure_intervals)
     for interval in collated_intervals:
         print(interval)
+    return collated_intervals
 
 
 def main():
@@ -85,6 +95,13 @@ def main():
     # Plot failure two - oil leak
     plt.axvspan(xmin=np.datetime64('2022-07-11T10:10:18.948000000'), xmax=np.datetime64('2022-07-14T10:22:08.046000000'), color='gray', alpha=0.5)
     plt.axvline(x=np.datetime64('2022-07-13T19:43:52.593000000'), color='black', linestyle='--')
+
+    with open('data/train_chunks_unnormalized.pkl', 'rb') as f:
+        train_chunks_unnormalized = pickle.load(f)
+
+    # Load unnormalized data
+    with open('data/test_chunks_unnormalized.pkl', 'rb') as f:
+        test_chunks_unnormalized = pickle.load(f)
 
     models = ['WAE_NOGAN']
     for model_name in models:
@@ -116,6 +133,15 @@ def main():
     print_failures(test_chunk_dates, failures)
     plt.plot(test_chunk_dates[:, 1], output, label='NaiveFlowmeter')
 
+    print('Manual Tree')
+
+    binary_output = (test_chunks_unnormalized[..., 6].max(axis=1) > 9.566).astype(np.int8)
+
+    output = simple_lowpass_filter(binary_output, alpha)
+    failures = (output >= threshold).astype(np.int8)
+    print_failures(test_chunk_dates, failures)
+    plt.plot(test_chunk_dates[:, 1], output, label='Tree')
+
     plt.axhline(y=threshold, color='red', linestyle='--', alpha=0.7)
     plt.legend()
     plt.savefig('test.png')
@@ -130,6 +156,32 @@ def main():
     plt.xlim(np.datetime64('2022-06-19T00:00:00.000000000'), np.datetime64('2022-06-21T00:00:00.000000000'))
     plt.savefig('test4.png')
 
+    # Construct ground truth
+    from sklearn.tree import DecisionTreeClassifier, plot_tree
+    binary_output = (test_errors > anom).astype(np.int8)
+    all_alerts = binary_output.squeeze()
+
+    correct_alerts = all_alerts.copy()
+    correct_alerts[4000:5000] = 0
+
+    tree = DecisionTreeClassifier(max_depth=2, random_state=192781)
+    X = np.concatenate([
+        construct_features(test_chunks_unnormalized[..., 6])
+    ], axis=1)
+    feature_labels = ['flow_unnorm_mean', 'flow_unnorm_var', 'flow_unnorm_max', 'flow_unnorm_min']
+    tree.fit(X, correct_alerts)
+    print('train score (correct alerts)', tree.score(X, correct_alerts))
+    fig, axs = plt.subplots(1,1)
+    plot_tree(tree, ax=axs, feature_names=feature_labels, class_names=['no failure', 'failure'])
+    fig.tight_layout()
+    fig.savefig('tree.png')
+
+    # Make sure this works on the real training part
+    X = np.concatenate([
+        construct_features(train_chunks_unnormalized[..., 6])
+    ], axis=1)
+    y = np.zeros((len(train_chunks)))
+    print('score on real train data', tree.score(X, y))
 
 if __name__ == '__main__':
     main()

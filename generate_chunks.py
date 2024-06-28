@@ -54,6 +54,7 @@ def generate_data():
 
     analog_sensors = ['TP2', 'TP3', 'H1', 'DV_pressure', 'Reservoirs',
                     'Oil_temperature', 'Flowmeter', 'Motor_current']
+    additional_sensors = ['COMP']
 
     print('Separated into training and test')
 
@@ -63,8 +64,16 @@ def generate_data():
 
     print("Calculate chunks")
 
-    train_chunks, train_chunk_dates = generate_chunks(metro_train, 1800, 60, analog_sensors)
-    test_chunks, test_chunk_dates = generate_chunks(metro_test, 1800, 5*60, analog_sensors)
+    train_chunks, train_chunk_dates = generate_chunks(metro_train, 1800, 60, analog_sensors+additional_sensors)
+    test_chunks, test_chunk_dates = generate_chunks(metro_test, 1800, 5*60, analog_sensors+additional_sensors)
+
+    makedirs('data', exist_ok=True)
+
+    with open("data/train_chunks_unnormalized.pkl", "wb") as pklfile:
+        pkl.dump(train_chunks, pklfile)
+
+    with open("data/test_chunks_unnormalized.pkl", "wb") as pklfile:
+        pkl.dump(test_chunks, pklfile)
 
     scaler = StandardScaler()
     train_chunks = np.array(list(map(lambda x: scaler.fit_transform(x), train_chunks)))
@@ -72,7 +81,6 @@ def generate_data():
 
     print("Finished scaling")
 
-    makedirs('data', exist_ok=True)
 
     with open("data/train_chunk_dates.pkl", "wb") as pklfile:
         pkl.dump(train_chunk_dates, pklfile)
