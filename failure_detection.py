@@ -142,6 +142,12 @@ def main():
     print_failures(test_chunk_dates, failures)
     plt.plot(test_chunk_dates[:, 1], output, label='Tree')
 
+    # ----- Just use the rule, without smoothing or anything else
+    print('Treshold')
+    failures = (test_chunks_unnormalized[..., 6].max(axis=1) > 9.566).astype(np.int8)
+    print_failures(test_chunk_dates, failures)
+    plt.plot(test_chunk_dates[:, 1], failures, label='Threshold')
+
     plt.axhline(y=threshold, color='red', linestyle='--', alpha=0.7)
     plt.legend()
     plt.savefig('test.png')

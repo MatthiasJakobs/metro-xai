@@ -2,8 +2,10 @@
 __pycache__
 .DS_Store
 MetroPT2.csv
+MetroPT3.csv
 .vscode
 data
 results
 models
 *.png
+__MACOSX
