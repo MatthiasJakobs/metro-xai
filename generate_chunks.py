@@ -32,33 +32,39 @@ def generate_chunks(df, chunk_size, chunk_stride, cols):
     c = np.concatenate(c)
     return c, np.concatenate(window_start_date)
 
-def load_data():
-    with open("data/train_chunk_dates.pkl", "rb") as chunk_dates_file:
+def load_data(version=2):
+    with open(f"data/pt{version}_train_chunk_dates.pkl", "rb") as chunk_dates_file:
         train_chunk_dates = pkl.load(chunk_dates_file)
-    with open("data/train_chunks.pkl", "rb") as chunk_dates_file:
+    with open(f"data/pt{version}_train_chunks.pkl", "rb") as chunk_dates_file:
         train_chunks = pkl.load(chunk_dates_file).astype(np.float32)
-    with open("data/test_chunk_dates.pkl", "rb") as chunk_dates_file:
+    with open(f"data/pt{version}_test_chunk_dates.pkl", "rb") as chunk_dates_file:
         test_chunk_dates = pkl.load(chunk_dates_file)
-    with open("data/test_chunks.pkl", "rb") as chunk_dates_file:
+    with open(f"data/pt{version}_test_chunks.pkl", "rb") as chunk_dates_file:
         test_chunks = pkl.load(chunk_dates_file).astype(np.float32)
 
     return train_chunks, train_chunk_dates, test_chunks, test_chunk_dates
 
-def generate_data():
+def generate_data(version=2):
+    print(f'=== MetroPT{version} ===')
     print("Read dataset")
 
-    final_metro = pd.read_csv('MetroPT2.csv')
+    final_metro = pd.read_csv(f'MetroPT{version}.csv')
     final_metro['timestamp'] = pd.to_datetime(final_metro['timestamp'])
     final_metro = final_metro.sort_values('timestamp')
     final_metro.reset_index(drop=True, inplace=True)
 
-    analog_sensors = ['TP2', 'TP3', 'H1', 'DV_pressure', 'Reservoirs',
-                    'Oil_temperature', 'Flowmeter', 'Motor_current']
-    additional_sensors = ['COMP']
+    if version == 2:
+        analog_sensors = ['TP2', 'TP3', 'H1', 'DV_pressure', 'Reservoirs',
+                        'Oil_temperature', 'Flowmeter', 'Motor_current']
+        additional_sensors = ['COMP']
+        cutoff_date = np.datetime64('2022-06-01T00:00:00.000000000')
+    else:
+        analog_sensors = ['TP2', 'TP3', 'H1', 'DV_pressure', 'Reservoirs', 'Oil_temperature', 'Motor_current']
+        additional_sensors = []
+        cutoff_date = np.datetime64('2020-04-01T00:00:00.000000000')
 
     print('Separated into training and test')
 
-    cutoff_date = np.datetime64('2022-06-01T00:00:00.000000000')
     metro_train = final_metro[final_metro['timestamp'] < cutoff_date]
     metro_test = final_metro[final_metro['timestamp'] >= cutoff_date]
 
@@ -69,10 +75,10 @@ def generate_data():
 
     makedirs('data', exist_ok=True)
 
-    with open("data/train_chunks_unnormalized.pkl", "wb") as pklfile:
+    with open(f"data/pt{version}_train_chunks_unnormalized.pkl", "wb") as pklfile:
         pkl.dump(train_chunks, pklfile)
 
-    with open("data/test_chunks_unnormalized.pkl", "wb") as pklfile:
+    with open(f"data/pt{version}_test_chunks_unnormalized.pkl", "wb") as pklfile:
         pkl.dump(test_chunks, pklfile)
 
     scaler = StandardScaler()
@@ -81,20 +87,22 @@ def generate_data():
 
     print("Finished scaling")
 
-
-    with open("data/train_chunk_dates.pkl", "wb") as pklfile:
+    with open(f"data/pt{version}_train_chunk_dates.pkl", "wb") as pklfile:
         pkl.dump(train_chunk_dates, pklfile)
 
-    with open("data/test_chunk_dates.pkl", "wb") as pklfile:
+    with open(f"data/pt{version}_test_chunk_dates.pkl", "wb") as pklfile:
         pkl.dump(test_chunk_dates, pklfile)
 
-    with open("data/train_chunks.pkl", "wb") as pklfile:
+    with open(f"data/pt{version}_train_chunks.pkl", "wb") as pklfile:
         pkl.dump(train_chunks, pklfile)
 
-    with open("data/test_chunks.pkl", "wb") as pklfile:
+    with open(f"data/pt{version}_test_chunks.pkl", "wb") as pklfile:
         pkl.dump(test_chunks, pklfile)
 
     print("Finished saving")
 
 if __name__ == '__main__':
-    generate_data()
+    #generate_data(version=2)
+    generate_data(version=3)
+    load_data(version=2)
+    load_data(version=3)

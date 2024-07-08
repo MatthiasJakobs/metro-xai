@@ -31,7 +31,8 @@ class ModelTrainer:
         self.model_seed = config.get('model_seed', 91721)
         self.model_name = config.get('model_name')
 
-        self.use_channels = np.array(config.get('use_channels', [0, 1, 2, 3, 4, 5, 6, 7]))
+        available_channels = np.arange(8) if config['version'] == 2 else np.arange(7)
+        self.use_channels = np.array(config.get('use_channels', available_channels))
 
         model_params = {}
         model_params.update(config['model_params'])
@@ -69,8 +70,9 @@ class ModelTrainer:
         self.model_params = model_params
         self.hyperparameters = hyperparameters
         self.autoencoder = config['autoencoder']
+        self.version = config['version']
         makedirs('models', exist_ok=True)
-        self.path = f'models/pt2_{self.model_name}.pickle'
+        self.path = f'models/pt{self.version}_{self.model_name}.pickle'
 
     def preprocess(self, X):
         X = X[..., self.use_channels]
@@ -145,11 +147,9 @@ def train_cv(config):
     print('average', np.mean(val_losses))
 
 if __name__ == '__main__':
-    #train_cv('TCN_AE')
-    train_data, _, test_data, _ = load_data()
-
     model_name = sys.argv[1]
     trainer = ModelTrainer(f'configs/{model_name}.json')
+    train_data, _, test_data, _ = load_data(version=trainer.version)
     trainer.fit(train_data)
     print(model_name, 'train_loss', trainer.calc_loss(train_data, train_data))
     print(model_name, 'test_loss', trainer.calc_loss(test_data, test_data))

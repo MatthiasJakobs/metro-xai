@@ -60,14 +60,14 @@ class TemporalBlock(nn.Module):
 
 class DeepAE(nn.Module):
 
-    def __init__(self, L, n_channels, embedding_dim=16, n_kernel=6, kernel_size=7, n_blocks=5, skip_connections=True):
+    def __init__(self, L, n_channels, embedding_dim=16, n_kernel=6, kernel_size=7, n_blocks=5, skip_connections=True, dropout=0.2):
         super().__init__()
 
         self.encoder = []
         self.decoder = []
         for i in range(n_blocks):
-            self.encoder.append(TemporalBlock(n_channels if i == 0 else n_kernel, n_kernel, kernel_size, skip_connections=skip_connections, dilation=2**i))
-            self.decoder.append(TemporalBlock(embedding_dim if i == 0 else n_kernel, n_kernel, kernel_size, skip_connections=skip_connections, dilation=2**i))
+            self.encoder.append(TemporalBlock(n_channels if i == 0 else n_kernel, n_kernel, kernel_size, skip_connections=skip_connections, dilation=2**i, dropout=dropout))
+            self.decoder.append(TemporalBlock(embedding_dim if i == 0 else n_kernel, n_kernel, kernel_size, skip_connections=skip_connections, dilation=2**i, dropout=dropout))
         self.encoder = nn.Sequential(*self.encoder)
         self.decoder = nn.Sequential(*self.decoder)
         self.project_to_latent = nn.Linear(n_kernel, embedding_dim)

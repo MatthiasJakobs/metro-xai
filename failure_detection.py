@@ -81,7 +81,7 @@ def print_failures(cycle_dates, output):
 
 
 def main():
-    train_chunks, training_chunk_dates, test_chunks, test_chunk_dates = load_data()
+    train_chunks, training_chunk_dates, test_chunks, test_chunk_dates = load_data(version=2)
 
     alpha = 0.05
     threshold = 0.5
@@ -96,14 +96,15 @@ def main():
     plt.axvspan(xmin=np.datetime64('2022-07-11T10:10:18.948000000'), xmax=np.datetime64('2022-07-14T10:22:08.046000000'), color='gray', alpha=0.5)
     plt.axvline(x=np.datetime64('2022-07-13T19:43:52.593000000'), color='black', linestyle='--')
 
-    with open('data/train_chunks_unnormalized.pkl', 'rb') as f:
+    with open('data/pt2_train_chunks_unnormalized.pkl', 'rb') as f:
         train_chunks_unnormalized = pickle.load(f)
 
     # Load unnormalized data
-    with open('data/test_chunks_unnormalized.pkl', 'rb') as f:
+    with open('data/pt2_test_chunks_unnormalized.pkl', 'rb') as f:
         test_chunks_unnormalized = pickle.load(f)
 
-    models = ['WAE_NOGAN']
+    #models = ['WAE_NOGAN']
+    models = []
     for model_name in models:
         print(model_name)
         model = ModelTrainer(f'configs/{model_name}.json').fit()
@@ -188,6 +189,74 @@ def main():
     ], axis=1)
     y = np.zeros((len(train_chunks)))
     print('score on real train data', tree.score(X, y))
+
+    # Alternative based on other features
+    print('=== alternative, no flow ===')
+    channel_names = [
+        'TP2',
+        'TP3',
+        'H1',
+        'DV_pressure',
+        'Reservoirs',
+        'Oil_temperature',
+        'Flowmeter',
+        'Motor_current',
+        'COMP'
+    ]
+    X = np.concatenate([
+        construct_features(test_chunks_unnormalized[..., 0]),
+        construct_features(test_chunks_unnormalized[..., 1]),
+        construct_features(test_chunks_unnormalized[..., 2]),
+        construct_features(test_chunks_unnormalized[..., 3]),
+        construct_features(test_chunks_unnormalized[..., 4]),
+        construct_features(test_chunks_unnormalized[..., 5]),
+        construct_features(test_chunks_unnormalized[..., 7]),
+        construct_features(test_chunks_unnormalized[..., 8]),
+    ], axis=1)
+    feature_names = sum([[cname+'_avg', cname+'_var', cname+'_max', cname+'_min'] for idx, cname in enumerate(channel_names) if idx not in [6]], [])
+    print(feature_names)
+    tree = DecisionTreeClassifier(max_depth=2, random_state=192781)
+    tree.fit(X, correct_alerts)
+    print('train score (correct alerts)', tree.score(X, correct_alerts))
+    fig, axs = plt.subplots(1,1)
+    plot_tree(tree, ax=axs, feature_names=feature_names, class_names=['no failure', 'failure'])
+    fig.tight_layout()
+    fig.savefig('alternative_rule.png')
+
+    # Make sure this works on the real training part
+    X = np.concatenate([
+        construct_features(train_chunks_unnormalized[..., 0]),
+        construct_features(train_chunks_unnormalized[..., 1]),
+        construct_features(train_chunks_unnormalized[..., 2]),
+        construct_features(train_chunks_unnormalized[..., 3]),
+        construct_features(train_chunks_unnormalized[..., 4]),
+        construct_features(train_chunks_unnormalized[..., 5]),
+        construct_features(train_chunks_unnormalized[..., 7]),
+        construct_features(train_chunks_unnormalized[..., 8]),
+    ], axis=1)
+    y = np.zeros((len(train_chunks)))
+    print('score on real train data', tree.score(X, y))
+    print('On all data:')
+    all_chunks = np.concatenate([test_chunks_unnormalized, train_chunks_unnormalized], axis=0)
+    X = np.concatenate([
+        construct_features(all_chunks[..., 0]),
+        construct_features(all_chunks[..., 1]),
+        construct_features(all_chunks[..., 2]),
+        construct_features(all_chunks[..., 3]),
+        construct_features(all_chunks[..., 4]),
+        construct_features(all_chunks[..., 5]),
+        construct_features(all_chunks[..., 7]),
+        construct_features(all_chunks[..., 8]),
+    ], axis=1)
+    y = np.concatenate([correct_alerts, np.zeros((len(train_chunks)))])
+    tree = DecisionTreeClassifier(max_depth=3, random_state=192781)
+    tree.fit(X, y)
+    print(tree.score(X, y))
+    fig, axs = plt.subplots(1,1)
+    plot_tree(tree, ax=axs, feature_names=feature_names, class_names=['no failure', 'failure'])
+    fig.tight_layout()
+    fig.savefig('alternative_rule.png')
+
 
 if __name__ == '__main__':
     main()

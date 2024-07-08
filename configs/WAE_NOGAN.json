@@ -1,6 +1,7 @@
 {
     "model_name": "WAE_NOGAN",
     "model_class": "DeepAE",
+    "version": 2,
     "autoencoder": true,
     "model_params": {
         "L": 1800,

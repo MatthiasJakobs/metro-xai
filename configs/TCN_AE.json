@@ -2,6 +2,7 @@
     "model_name": "TCN_AE",
     "model_class": "DeepAE",
     "autoencoder": true,
+    "version": 2,
     "model_params": {
         "L": 1800,
         "n_channels": 8,

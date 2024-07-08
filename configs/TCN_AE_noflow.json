@@ -2,6 +2,7 @@
     "model_name": "TCN_AE_noflow",
     "model_class": "DeepAE",
     "autoencoder": true,
+    "version": 2,
     "use_channels": [0, 1, 2, 3, 4, 5, 7],
     "model_params": {
         "L": 1800,

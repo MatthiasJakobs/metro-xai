@@ -1,6 +1,7 @@
 {
     "model_name": "LSTM_AE",
     "model_class": "LSTMAE",
+    "version": 2,
     "autoencoder": true,
     "model_params": {
         "L": 1800,
