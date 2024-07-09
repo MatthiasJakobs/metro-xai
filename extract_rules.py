@@ -13,7 +13,7 @@ def construct_features(X, axis=-1):
     mn = np.min(X, axis=axis, keepdims=True)
     return np.concatenate([avg, var, mx, mn], axis=axis)
 
-def pt2_fit_rules():
+def fit_rules():
     with open('data/pt2_test_chunks_unnormalized.pkl', 'rb') as f:
         test_chunks_unnormalized = pickle.load(f)
     with open('data/pt2_train_chunks_unnormalized.pkl', 'rb') as f:
@@ -76,78 +76,52 @@ def pt2_fit_rules():
     fig.tight_layout()
     fig.savefig('plots/alternative_rule.png')
 
-def main():
-    pt2_fit_rules()
-    exit()
-    # Load data
+    print('=== Check transferability to MetroPT3 ===')
     with open('data/pt3_train_chunks_unnormalized.pkl', 'rb') as f:
         train_chunks_unnormalized = pickle.load(f)
-
-    with open('data/pt3_test_chunks_unnormalized.pkl', 'rb') as f:
-        test_chunks_unnormalized = pickle.load(f)
-
-    max_temperature = train_chunks_unnormalized[..., 5].max(axis=-1)
-    min_current = train_chunks_unnormalized[...,  6].min(axis=-1)
-    train_labels = np.zeros((len(max_temperature)))
     
-    current_thresh = 0.014
-    temperature_thresh = 73.487
-    failures = (min_current <= current_thresh).astype(np.int8)
-    failures += np.logical_and(min_current > current_thresh, max_temperature > temperature_thresh).astype(np.int8)
+    # First, reconstruct PT2 features without Flowmeter and COMP
+    X = construct_features(all_chunks, axis=1).swapaxes(1, 2)
+    X = X[:, [0, 1, 2, 3, 4, 5, 7]]
+    n_batches = X.shape[0]
+    X = X.reshape(n_batches, -1)
 
-    # Load old data
-    old_X = np.load('data/pt2_X_tree.npy')
-    old_y = np.load('data/pt2_y_tree.npy')
-    old_temperature = old_X[..., 22]
-    old_currents = old_X[..., 27]
+    # Generate PT3 features
+    _X = construct_features(train_chunks_unnormalized, axis=1).swapaxes(1, 2)
+    n_batches = _X.shape[0]
+    _X = _X.reshape(n_batches, -1)
+    _y = np.zeros((len(_X)))
 
-    tn, fp, fn, tp = confusion_matrix(train_labels, failures).ravel()
-    best_f1 = f1_score(train_labels, failures)
-    print('Evaluated on pt3 train data')
-    print(f'tn={tn}, fp={fp}, fn={fn}, tp={tp}')
-    print('f1', best_f1)
-    print('Starting sampling of parameters')
-    rng = np.random.RandomState(123817)
-    min_fp = fp
+    X = np.concatenate([X, _X], axis=0)
+    y = np.concatenate([y, _y], axis=0)
 
-    X_temp = np.concatenate([old_temperature, max_temperature])
-    X_current = np.concatenate([old_currents, min_current])
-    y = np.concatenate([old_y, train_labels])
+    transformed_feature_names = [[fname+'_mean', fname+'_var', fname+'_max', fname+'_min'] for fname in channel_names if fname != 'Flowmeter' and fname != 'COMP']
+    transformed_feature_names = sum(transformed_feature_names, [])
 
-    # Train a tree, for checking
-    tree = DecisionTreeClassifier(max_depth=2, random_state=12345)
-    tree_train_data = np.concatenate([X_temp[:, None], X_current[:, None]], axis=-1)
-    tree.fit(tree_train_data, y)
-    print(tree.score(tree_train_data, y))
+    tree = DecisionTreeClassifier(max_depth=4, random_state=192781)
+    tree.fit(X, y)
+    print('max depth 4', tree.score(X, y))
     fig, axs = plt.subplots(1,1)
-    plot_tree(tree, ax=axs, feature_names=['Oil_temperature_max', 'Motor_current_min'], class_names=['no failure', 'failure'])
+    plot_tree(tree, ax=axs, feature_names=transformed_feature_names, class_names=['no failure', 'failure'])
     fig.tight_layout()
-    fig.savefig('total_tree.png')
-    exit()
+    fig.savefig('plots/transfer_large.png')
 
-    n_samples = 500
-    cts = rng.normal(loc=current_thresh, scale=0.01, size=n_samples)
-    tts = rng.normal(loc=temperature_thresh, scale=5, size=n_samples)
-    for i in tqdm.trange(n_samples):
-        ct = current_thresh
-        tt = tts[i]
-        failures = (X_current <= ct).astype(np.int8)
-        failures += np.logical_and(X_current > ct, X_temp > tt).astype(np.int8)
+    # TODO: Restrict to two features, since tree came out different. But maybe using mean of oil_temp is better than max?
+    X = X[..., [22, 27]]
+    transformed_feature_names = ['Oil_temperature_max', 'Motor_current_min']
 
-        f1 = f1_score(y, failures)
-        if f1 > best_f1:
-            best_f1 = f1
-            best_ct = ct
-            best_tt = tt
+    tree = DecisionTreeClassifier(max_depth=2, random_state=192781)
+    tree.fit(X, y)
+    print('max depth 2', tree.score(X, y))
+    fig, axs = plt.subplots(1,1)
 
-        #tn, fp, fn, tp = confusion_matrix(y, failures).ravel()
-        #print(f'tn={tn}, fp={fp}, fn={fn}, tp={tp}')
-        # if fp < min_fp:
-        #     min_fp = fp
-        #     best_ct = ct
-        #     best_tt = tt
-    print(best_ct, best_tt, best_f1)
+    plot_tree(tree, ax=axs, feature_names=transformed_feature_names, class_names=['no failure', 'failure'])
+    fig.tight_layout()
+    fig.savefig('plots/transfer_rule.png')
 
+
+def main():
+    fit_rules()
 
 if __name__ == '__main__':
     main()
