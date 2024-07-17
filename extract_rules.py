@@ -105,6 +105,8 @@ def fit_rules():
     plot_tree(tree, ax=axs, feature_names=transformed_feature_names, class_names=['no failure', 'failure'])
     fig.tight_layout()
     fig.savefig('plots/transfer_large.png')
+    with open('models/pt2_dt_transfer_large.pkl', 'wb') as f:
+        pickle.dump(tree, f)
 
     # TODO: Restrict to two features, since tree came out different. But maybe using mean of oil_temp is better than max?
     X = X[..., [22, 27]]
