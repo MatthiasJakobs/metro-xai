@@ -162,11 +162,25 @@ def main():
     # History stores the "good" examples assumed to be non-anomalous
     history = [train_chunks_features]
 
-    print('Start OnlineRL')
+    print('Start OnlineRL with all features')
     orl = OnlineRL()
     orl.run(output, test_chunks_features, history, transformed_feature_names)
     print('done')
-    orl.log.to_csv('test.csv')
+    orl.log.to_csv('flowmeter_failures.csv')
+
+    print('Start OnlineRL without Flowmeter')
+
+    ## Restrict to not use Flowmeter
+    feature_indices = np.array([0, 1, 2, 3, 4, 5, 7, 8])
+
+    # History stores the "good" examples assumed to be non-anomalous
+    history = [train_chunks_features[:, feature_indices]]
+    transformed_feature_names = [tfn for tfn in transformed_feature_names if 'Flowmeter' not in tfn]
+
+    orl = OnlineRL()
+    orl.run(output, test_chunks_features[:, feature_indices], history, transformed_feature_names)
+    print('done')
+    orl.log.to_csv('no_flowmeter_failures.csv')
 
     # Buffer stores the datapoints during warning
     # buffer = []
