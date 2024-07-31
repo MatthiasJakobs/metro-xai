@@ -102,7 +102,7 @@ def generate_data(version=2):
     print("Finished saving")
 
 if __name__ == '__main__':
-    #generate_data(version=2)
+    generate_data(version=2)
     generate_data(version=3)
-    #load_data(version=2)
+    load_data(version=2)
     load_data(version=3)
