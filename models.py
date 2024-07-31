@@ -99,3 +99,37 @@ class LSTMAE(nn.Module):
         out = self.project_to_output(out)
         return out
         
+
+class SimpleAE(nn.Module):
+
+    def __init__(self, L, n_channels, n_kernel=8, embedding_dim=4):
+        super().__init__()
+        self.encoder = nn.Sequential(
+            nn.Conv1d(in_channels=n_channels, kernel_size=5, out_channels=n_kernel, padding='same'),
+            nn.MaxPool1d(2),
+            nn.ReLU(),
+            nn.Conv1d(in_channels=n_kernel, kernel_size=5, out_channels=n_kernel, padding='same'),
+            nn.MaxPool1d(2),
+            nn.ReLU(),
+            nn.Conv1d(in_channels=n_kernel, kernel_size=5, out_channels=n_kernel, padding='same'),
+            nn.MaxPool1d(2),
+        )
+        self.decoder = nn.Sequential(
+            nn.Conv1d(in_channels=embedding_dim, kernel_size=5, out_channels=n_kernel, padding='same'),
+            nn.Upsample(scale_factor=2),
+            nn.ReLU(),
+            nn.Conv1d(in_channels=n_kernel, kernel_size=5, out_channels=n_kernel, padding='same'),
+            nn.Upsample(scale_factor=2),
+            nn.ReLU(),
+            nn.Conv1d(in_channels=n_kernel, kernel_size=5, out_channels=n_kernel, padding='same'),
+            nn.Upsample(scale_factor=2),
+        )
+        self.project_to_latent = nn.Linear(n_kernel, embedding_dim)
+        self.project_to_output = nn.Linear(n_kernel, n_channels)
+
+    def forward(self, X):
+        embedding = self.encoder(X.permute(0, 2, 1))
+        embedding = self.project_to_latent(embedding.permute(0,2,1)).permute(0,2,1)
+        reconstruction = self.decoder(embedding)
+        reconstruction = self.project_to_output(reconstruction.permute(0,2,1))
+        return reconstruction

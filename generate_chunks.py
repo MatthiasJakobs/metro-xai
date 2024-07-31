@@ -60,7 +60,7 @@ def generate_data(version=2):
         cutoff_date = np.datetime64('2022-06-01T00:00:00.000000000')
     else:
         analog_sensors = ['TP2', 'TP3', 'H1', 'DV_pressure', 'Reservoirs', 'Oil_temperature', 'Motor_current']
-        additional_sensors = []
+        additional_sensors = ['COMP', 'DV_eletric', 'Towers', 'Pressure_switch', 'Oil_level', 'Caudal_impulses']
         cutoff_date = np.datetime64('2020-04-01T00:00:00.000000000')
 
     print('Separated into training and test')
@@ -102,7 +102,7 @@ def generate_data(version=2):
     print("Finished saving")
 
 if __name__ == '__main__':
-    generate_data(version=2)
+    #generate_data(version=2)
     generate_data(version=3)
-    load_data(version=2)
+    #load_data(version=2)
     load_data(version=3)

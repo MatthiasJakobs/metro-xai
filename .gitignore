@@ -9,3 +9,5 @@ results
 models
 *.png
 __MACOSX
+*.pdf
+plots/

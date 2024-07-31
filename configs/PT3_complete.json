@@ -1,14 +1,13 @@
 {
-    "model_name": "WAE_NOGAN",
+    "model_name": "complete",
     "model_class": "DeepAE",
     "version": 3,
     "autoencoder": true,
-    "use_channels": [0, 1, 2, 3, 4, 5, 6],
     "model_params": {
         "L": 1800,
-        "n_channels": 7,
+        "n_channels": 13,
         "embedding_dim": 32,
-        "n_kernel": 30,
+        "n_kernel": 32,
         "kernel_size": 3,
         "n_blocks": 10,
         "skip_connections": true

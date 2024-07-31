@@ -11,12 +11,13 @@ from os.path import exists
 from os import makedirs
 from generate_chunks import load_data
 
-from models import AE_MAD, DeepAE, LSTMAE
+from models import AE_MAD, DeepAE, LSTMAE, SimpleAE
 
 model_map = {
     'AE_MAD': AE_MAD,
     'DeepAE': DeepAE,
-    'LSTMAE': LSTMAE
+    'LSTMAE': LSTMAE,
+    'SimpleAE': SimpleAE,
 }
 
 class ModelTrainer:
@@ -31,7 +32,7 @@ class ModelTrainer:
         self.model_seed = config.get('model_seed', 91721)
         self.model_name = config.get('model_name')
 
-        available_channels = np.arange(8) if config['version'] == 2 else np.arange(7)
+        available_channels = np.arange(8) if config['version'] == 2 else np.arange(13)
         self.use_channels = np.array(config.get('use_channels', available_channels))
 
         model_params = {}

@@ -10,8 +10,7 @@ from os import makedirs
 from extract_rules import construct_features
 
 def extreme_anomaly(dist):
-    q25, q75, q90, q95, q99 = np.quantile(dist, [0.25, 0.75, 0.9, 0.95, 0.99])
-    #return q99
+    q05, q10, q25, q75, q90, q95, q97, q98, q99 = np.quantile(dist, [0.05, 0.1, 0.25, 0.75, 0.9, 0.95, 0.97, 0.98, 0.99])
     return q75 + 3*(q75-q25)
 
 def simple_lowpass_filter(arr, alpha):
@@ -164,6 +163,39 @@ def failure_pt3():
     plt.savefig('plots/test4.png')
 
 
+def set_style(width_pt, height_fraction=1):
+    # Width of figure (in pts)
+    fig_width_pt = width_pt 
+    # Convert from pt to inches
+    inches_per_pt = 1 / 72.27
+
+    # Golden ratio to set aesthetic figure height
+    # https://disq.us/p/2940ij3
+    golden_ratio = (5**.5 - 1) / 2
+
+    # Figure width in inches
+    fig_width_in = fig_width_pt * inches_per_pt
+    # Figure height in inches
+    fig_height_in = fig_width_in * golden_ratio * height_fraction
+
+    # Fonts
+    tex_fonts = {
+        # Use LaTeX to write all text
+        #"text.usetex": True,
+        #"font.family": "serif",
+        # Use 10pt font in plots, to match 10pt font in document
+        "axes.labelsize": 8,
+        "font.size": 8,
+        # Make the legend/label fonts a little smaller
+        "legend.fontsize": 8,
+        "xtick.labelsize": 6,
+        "ytick.labelsize": 6
+    }
+
+    plt.rcParams.update(tex_fonts)
+
+    return (fig_width_in, fig_height_in)
+
 def failure_pt2():
     makedirs('plots', exist_ok=True)
     train_chunks, training_chunk_dates, test_chunks, test_chunk_dates = load_data(version=2)
@@ -172,7 +204,7 @@ def failure_pt2():
     threshold = 0.5
     print('Alpha:', alpha)
 
-    plt.figure(figsize=(12, 6))
+    plt.figure(figsize=set_style(468.0, height_fraction=0.5))
 
     # Plot failure one - air pressure
     plt.axvspan(xmin=np.datetime64('2022-06-04T10:19:24.300000000'), xmax=np.datetime64('2022-06-04T14:22:39.188000000'), color='gray', alpha=0.5)
@@ -181,7 +213,8 @@ def failure_pt2():
     plt.axvspan(xmin=np.datetime64('2022-07-11T10:10:18.948000000'), xmax=np.datetime64('2022-07-14T10:22:08.046000000'), color='gray', alpha=0.5)
     plt.axvline(x=np.datetime64('2022-07-13T19:43:52.593000000'), color='black', linestyle='--')
 
-    models = ['TCN_AE', 'WAE_NOGAN']
+    #models = ['TCN_AE', 'WAE_NOGAN']
+    models = ['WAE_NOGAN']
     for model_name in models:
         print(model_name)
         model = ModelTrainer(f'configs/{model_name}.json').fit()
@@ -192,6 +225,9 @@ def failure_pt2():
         anom = extreme_anomaly(train_errors)
         binary_output = (test_errors > anom).astype(np.int8)
 
+        if model_name == 'WAE_NOGAN':
+            model_name = ''
+
         output = simple_lowpass_filter(binary_output,alpha)
         failures = (output >= threshold).astype(np.int8)
         plt.plot(test_chunk_dates[:, 1], output, label=model_name)
@@ -199,9 +235,12 @@ def failure_pt2():
         print_failures(test_chunk_dates, failures)
         print('---')
 
-    plt.axhline(y=threshold, color='red', linestyle='--', alpha=0.7)
+    plt.ylabel(r'$p(failure)$')
+    plt.axhline(y=threshold, color='red', linestyle='--', alpha=0.7, label=r'$\tau_{fail}$')
     plt.legend()
+    plt.tight_layout()
     plt.savefig('plots/test.png')
+    plt.savefig('plots/pfailure.pdf', transparent=True)
 
     # Save another grafic, this time zoomed in
     plt.xlim(np.datetime64('2022-06-04T06:00:00.000000000'), np.datetime64('2022-06-04T23:59:00.000000000'))
