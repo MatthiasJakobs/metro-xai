@@ -225,11 +225,13 @@ def failure_pt2():
         anom = extreme_anomaly(train_errors)
         binary_output = (test_errors > anom).astype(np.int8)
 
-        if model_name == 'WAE_NOGAN':
-            model_name = ''
-
         output = simple_lowpass_filter(binary_output,alpha)
         failures = (output >= threshold).astype(np.int8)
+
+        if model_name == 'WAE_NOGAN':
+            model_name = ''
+            np.save('data/pt2_waenogan_output.npy', output.squeeze())
+
         plt.plot(test_chunk_dates[:, 1], output, label=model_name)
 
         print_failures(test_chunk_dates, failures)
