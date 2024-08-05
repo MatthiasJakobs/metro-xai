@@ -42,7 +42,8 @@ class TemporalBlock(nn.Module):
         self.block.append(nn.Conv1d(input_filters, n_kernel, kernel_size, dilation=dilation, padding='same'))
         self.block.append(nn.BatchNorm1d(n_kernel))
         self.block.append(nn.ReLU())
-        self.block.append(nn.Dropout(dropout))
+        if dropout != 0:
+            self.block.append(nn.Dropout(dropout))
         self.block.append(nn.Conv1d(n_kernel, n_kernel, kernel_size, dilation=dilation, padding='same'))
         self.block.append(nn.BatchNorm1d(n_kernel))
         self.block = nn.Sequential(*self.block)

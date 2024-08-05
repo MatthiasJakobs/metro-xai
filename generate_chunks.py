@@ -32,15 +32,21 @@ def generate_chunks(df, chunk_size, chunk_stride, cols):
     c = np.concatenate(c)
     return c, np.concatenate(window_start_date)
 
-def load_data(version=2):
+def load_data(version=2, scaler=1):
     with open(f"data/pt{version}_train_chunk_dates.pkl", "rb") as chunk_dates_file:
         train_chunk_dates = pkl.load(chunk_dates_file)
-    with open(f"data/pt{version}_train_chunks.pkl", "rb") as chunk_dates_file:
-        train_chunks = pkl.load(chunk_dates_file).astype(np.float32)
     with open(f"data/pt{version}_test_chunk_dates.pkl", "rb") as chunk_dates_file:
         test_chunk_dates = pkl.load(chunk_dates_file)
-    with open(f"data/pt{version}_test_chunks.pkl", "rb") as chunk_dates_file:
-        test_chunks = pkl.load(chunk_dates_file).astype(np.float32)
+    if scaler == 1:
+        with open(f"data/pt{version}_train_chunks.pkl", "rb") as chunk_dates_file:
+            train_chunks = pkl.load(chunk_dates_file).astype(np.float32)
+        with open(f"data/pt{version}_test_chunks.pkl", "rb") as chunk_dates_file:
+            test_chunks = pkl.load(chunk_dates_file).astype(np.float32)
+    else:
+        with open(f"data/pt{version}_train_chunks_2.pkl", "rb") as chunk_dates_file:
+            train_chunks = pkl.load(chunk_dates_file).astype(np.float32)
+        with open(f"data/pt{version}_test_chunks_2.pkl", "rb") as chunk_dates_file:
+            test_chunks = pkl.load(chunk_dates_file).astype(np.float32)
 
     return train_chunks, train_chunk_dates, test_chunks, test_chunk_dates
 
@@ -82,8 +88,13 @@ def generate_data(version=2):
         pkl.dump(test_chunks, pklfile)
 
     scaler = StandardScaler()
-    train_chunks = np.array(list(map(lambda x: scaler.fit_transform(x), train_chunks)))
-    test_chunks = np.array(list(map(lambda x: scaler.fit_transform(x), test_chunks)))
+    sc1_train_chunks = np.array(list(map(lambda x: scaler.fit_transform(x), train_chunks)))
+    sc1_test_chunks = np.array(list(map(lambda x: scaler.fit_transform(x), test_chunks)))
+
+    n_channels = train_chunks.shape[-1]
+    scaler.fit(train_chunks[::30].reshape(-1, n_channels))
+    sc2_train_chunks = np.array(list(map(lambda x: scaler.transform(x), train_chunks)))
+    sc2_test_chunks = np.array(list(map(lambda x: scaler.transform(x), test_chunks)))
 
     print("Finished scaling")
 
@@ -94,10 +105,16 @@ def generate_data(version=2):
         pkl.dump(test_chunk_dates, pklfile)
 
     with open(f"data/pt{version}_train_chunks.pkl", "wb") as pklfile:
-        pkl.dump(train_chunks, pklfile)
+        pkl.dump(sc1_train_chunks, pklfile)
 
     with open(f"data/pt{version}_test_chunks.pkl", "wb") as pklfile:
-        pkl.dump(test_chunks, pklfile)
+        pkl.dump(sc1_test_chunks, pklfile)
+
+    with open(f"data/pt{version}_train_chunks_2.pkl", "wb") as pklfile:
+        pkl.dump(sc2_train_chunks, pklfile)
+
+    with open(f"data/pt{version}_test_chunks_2.pkl", "wb") as pklfile:
+        pkl.dump(sc2_test_chunks, pklfile)
 
     print("Finished saving")
 

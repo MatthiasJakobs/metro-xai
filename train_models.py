@@ -31,6 +31,7 @@ class ModelTrainer:
         
         self.model_seed = config.get('model_seed', 91721)
         self.model_name = config.get('model_name')
+        self.scaler = config.get('scaler', 1)
 
         available_channels = np.arange(8) if config['version'] == 2 else np.arange(13)
         self.use_channels = np.array(config.get('use_channels', available_channels))
@@ -150,7 +151,7 @@ def train_cv(config):
 if __name__ == '__main__':
     model_name = sys.argv[1]
     trainer = ModelTrainer(f'configs/{model_name}.json')
-    train_data, _, test_data, _ = load_data(version=trainer.version)
+    train_data, _, test_data, _ = load_data(version=trainer.version, scaler=trainer.scaler)
     trainer.fit(train_data)
     print(model_name, 'train_loss', trainer.calc_loss(train_data, train_data))
     print(model_name, 'test_loss', trainer.calc_loss(test_data, test_data))
