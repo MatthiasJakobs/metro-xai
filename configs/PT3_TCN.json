@@ -3,6 +3,7 @@
     "model_class": "DeepAE",
     "version": 3,
     "autoencoder": true,
+    "use_channels": [0, 1, 2, 3, 4, 5, 6, 7],
     "scaler": 2,
     "model_params": {
         "L": 1800,
