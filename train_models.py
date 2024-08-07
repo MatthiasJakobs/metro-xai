@@ -96,13 +96,13 @@ class ModelTrainer:
             
             if exists(self.path) and not refit:
                 self.model.initialize()
-                self.model.load_params(f_params=self.path, f_history=self.path.replace('pickle', 'history'))
+                self.model.load_params(f_params=self.path)
             else:
                 if self.autoencoder:
                     self.model.fit(X, X)
                 else:
                     self.model.fit(X, y.squeeze())
-                self.model.save_params(f_params=self.path, f_history=self.path.replace('pickle', 'history'))
+                self.model.save_params(f_params=self.path)
         else:
             # Assume scikit-learn-style pipeline
             if exists(self.path):
