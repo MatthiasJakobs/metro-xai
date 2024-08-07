@@ -3,11 +3,11 @@
     "model_class": "DeepAE",
     "version": 3,
     "autoencoder": true,
-    "use_channels": [0, 1, 2, 3, 4, 5, 6, 7],
+    "use_channels": [0, 1, 2, 3, 4, 5, 6],
     "scaler": 2,
     "model_params": {
         "L": 1800,
-        "n_channels": 8,
+        "n_channels": 7,
         "embedding_dim": 32,
         "n_kernel": 30,
         "kernel_size": 3,
