@@ -1,7 +1,5 @@
 import pandas as pd
 import numpy as np
-import sys
-import tqdm
 
 def print_intervals(version=2):
     if version == 2:

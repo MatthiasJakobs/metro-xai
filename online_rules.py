@@ -6,10 +6,17 @@ import matplotlib.pyplot as plt
 
 from generate_chunks import load_data
 from train_models import ModelTrainer
-from failure_detection import extreme_anomaly, simple_lowpass_filter
-from extract_rules import construct_features
+from failure_detection import simple_lowpass_filter
 from sklearn.tree import DecisionTreeClassifier, export_text, plot_tree
 from plotting import default_plot
+
+def construct_features(X, axis=-1):
+    # Assume: X.shape = (batch_size, L, n_channels)
+    avg = np.mean(X, axis=axis, keepdims=True)
+    var = np.var(X, axis=axis, keepdims=True)
+    mx = np.max(X, axis=axis, keepdims=True)
+    mn = np.min(X, axis=axis, keepdims=True)
+    return np.concatenate([avg, var, mx, mn], axis=axis)
 
 def compare_trees(tree1, tree2):
     if tree1.get_depth() != tree2.get_depth():
@@ -208,128 +215,6 @@ def main():
     orl.run(output, test_chunks_features[:, feature_indices], history, transformed_feature_names)
     print('done')
     orl.log.to_csv('no_flowmeter_failures.csv')
-
-    # Buffer stores the datapoints during warning
-    # buffer = []
-
-    # trees = []
-
-    # warning_thresh = 0.0
-    # failure_thresh = 0.5
-
-    # for t in range(len(test_chunk_dates)): 
-    #     is_warning = output[t] > warning_thresh
-    #     is_failure = output[t] > failure_thresh
-
-    #     if is_warning:
-    #         buffer.append(np.expand_dims(test_chunks_features[t], 0))
-    #     else:
-    #         # Reset buffer and add to history
-    #         buffer = []
-    #         history.append(np.expand_dims(test_chunks_features[t], 0))
-
-    #     if is_failure and output[t-1] < output[t]:
-    #         X_good = np.concatenate(history)
-    #         y_good = np.zeros((X_good.shape[0]))
-    #         X_anom = np.concatenate(buffer)
-    #         y_anom = np.ones((X_anom.shape[0]))
-    #         _x, _y = np.concatenate([X_good, X_anom]), np.concatenate([y_good, y_anom])
-    #         _x = _x.reshape(_x.shape[0], -1)
-
-    #         # See if any rule still applies
-    #         new_trees = []
-    #         for tree in trees:
-    #             applies = tree.score(_x, _y) == 1
-    #             if applies:
-    #                 new_trees.append(tree)
-            
-    #         # TODO: When retrianing, we get "tighter" rules (i.e., a smaller max value that still splits perfectly). Kinda unsure what to do here?
-    #         changed = False
-    #         if len(new_trees) != len(trees):
-    #             changed = True
-    #             print(f'removed {len(trees)-len(new_trees)} because the rules did not apply anymore')
-            
-    #         trees = new_trees
-    #         if len(trees) == 0:
-    #             changed = True
-    #             trees = find_unique_trees(_x, _y, random_state=182616)
-
-
-    #         print(t, output[t])
-    #         if changed:
-    #             for tree in trees:
-    #                 print(export_text(tree, feature_names=transformed_feature_names))
-    #         print('---')
-    #     else:
-    #         #print(t, 'Reset trees and buffer')
-    #         buffer = []
-    #         trees = []
-
-
-    exit()
-
-    ## Restrict to not use Flowmeter
-    feature_indices = np.array([0, 1, 2, 3, 4, 5, 7, 8])
-
-    # History stores the "good" examples assumed to be non-anomalous
-    print(train_chunks_features.shape)
-    history = [train_chunks_features[:, feature_indices]]
-
-    # Buffer stores the datapoints during warning
-    buffer = []
-
-    trees = []
-
-    warning_thresh = 0.0
-    failure_thresh = 0.5
-
-    for t in range(len(test_chunk_dates)): 
-        is_warning = output[t] > warning_thresh
-        is_failure = output[t] > failure_thresh
-
-        if is_warning:
-            buffer.append(np.expand_dims(test_chunks_features[t, feature_indices], 0))
-        else:
-            # Reset buffer and add to history
-            buffer = []
-            history.append(np.expand_dims(test_chunks_features[t, feature_indices], 0))
-
-        if is_failure and output[t-1] < output[t]:
-            X_good = np.concatenate(history)
-            y_good = np.zeros((X_good.shape[0]))
-            X_anom = np.concatenate(buffer)
-            y_anom = np.ones((X_anom.shape[0]))
-            _x, _y = np.concatenate([X_good, X_anom]), np.concatenate([y_good, y_anom])
-            _x = _x.reshape(_x.shape[0], -1)
-
-            # See if any rule still applies
-            new_trees = []
-            for tree in trees:
-                applies = tree.score(_x, _y) == 1
-                if applies:
-                    new_trees.append(tree)
-            
-            # TODO: When retrianing, we get "tighter" rules (i.e., a smaller max value that still splits perfectly). Kinda unsure what to do here?
-            changed = False
-            if len(new_trees) != len(trees):
-                changed = True
-                print(f'removed {len(trees)-len(new_trees)} because the rules did not apply anymore')
-            
-            trees = new_trees
-            if len(trees) == 0:
-                changed = True
-                trees = find_unique_trees(_x, _y, random_state=182616)
-
-
-            print(t, output[t])
-            if changed:
-                for tree in trees:
-                    print(export_text(tree, feature_names=[tfn for tfn in transformed_feature_names if 'Flowmeter' not in tfn]))
-            print('---')
-        else:
-            #print(t, 'Reset trees and buffer')
-            buffer = []
-            trees = []
 
 if __name__ == '__main__':
     main()

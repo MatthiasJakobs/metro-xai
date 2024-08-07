@@ -6,8 +6,12 @@ MetroPT3.csv
 .vscode
 data
 results
-models
 *.png
 __MACOSX
 *.pdf
 plots/
+flowmeter_failures.csv
+no_flowmeter_failures.csv
+models/*
+!models/pt2_TCN.pickle
+!models/pt3_TCN.pickle

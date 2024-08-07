@@ -11,13 +11,10 @@ from os.path import exists
 from os import makedirs
 from generate_chunks import load_data
 
-from models import AE_MAD, DeepAE, LSTMAE, SimpleAE
+from models import DeepAE
 
 model_map = {
-    'AE_MAD': AE_MAD,
     'DeepAE': DeepAE,
-    'LSTMAE': LSTMAE,
-    'SimpleAE': SimpleAE,
 }
 
 class ModelTrainer:
@@ -128,25 +125,6 @@ class ModelTrainer:
         if not average:
             return errors
         return errors.mean()
-
-def train_cv(config):
-    train_data, _, test_data, _ = load_data()
-    n_splits = 5
-    val_percents = np.linspace(0.1, 0.5, n_splits)
-    val_losses = np.zeros((n_splits))
-    print('===', config, '===')
-    for i in range(n_splits):
-        print(f'Split {i+1}/{n_splits} - {1-val_percents[i]:.2f} train {val_percents[i]:.2f} val')
-        trainer = ModelTrainer(f'configs/{config}.json')
-        trainer.hyperparameters['train_split'] = TSValidSplit(val_percents[i])
-        trainer.hyperparameters['verbose'] = False
-        trainer.fit(train_data, refit=True)
-        val_data = train_data[-int(val_percents[i]*len(train_data)):]
-        val_loss = trainer.calc_loss(val_data, val_data)
-        val_losses[i] = val_loss
-
-    print(val_losses)
-    print('average', np.mean(val_losses))
 
 if __name__ == '__main__':
     model_name = sys.argv[1]

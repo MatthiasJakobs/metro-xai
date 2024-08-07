@@ -1,4 +1,3 @@
-import matplotlib
 import matplotlib.pyplot as plt
 
 COLORMAP = ['#e41a1c','#377eb8','#984ea3','#ff7f00','#cccc33','#f781bf','#4daf4a', '#a65628']
