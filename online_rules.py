@@ -144,6 +144,8 @@ class OnlineRL:
             plot_tree(tree, ax=ax, feature_names=feature_names, class_names=['no failure', 'failure'], precision=2)
             fig.tight_layout()
             fig.savefig(f'plots/{self.save_prefix}_globalrules_{idx}.pdf', transparent=True)
+            with open(f'models/{self.save_prefix}_tree_{idx}.pickle', 'wb') as f:
+                pickle.dump(tree, f)
 
         self.log = pd.DataFrame(self.log)
 
