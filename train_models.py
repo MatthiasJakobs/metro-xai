@@ -30,7 +30,7 @@ class ModelTrainer:
         self.model_name = config.get('model_name')
         self.scaler = config.get('scaler', 1)
 
-        available_channels = np.arange(8) if config['version'] == 2 else np.arange(13)
+        available_channels = np.arange(8) if config['version'] <= 2 else np.arange(13)
         self.use_channels = np.array(config.get('use_channels', available_channels))
 
         model_params = {}

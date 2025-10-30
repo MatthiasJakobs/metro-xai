@@ -59,7 +59,12 @@ def generate_data(version=2):
     final_metro = final_metro.sort_values('timestamp')
     final_metro.reset_index(drop=True, inplace=True)
 
-    if version == 2:
+    if version == 1:
+        analog_sensors = ['TP2', 'TP3', 'H1', 'DV_pressure', 'Reservoirs',
+                        'Oil_temperature', 'Flowmeter', 'Motor_current']
+        additional_sensors = ['COMP']
+        cutoff_date = np.datetime64('2022-02-01T00:00:00.000000000')
+    elif version == 2:
         analog_sensors = ['TP2', 'TP3', 'H1', 'DV_pressure', 'Reservoirs',
                         'Oil_temperature', 'Flowmeter', 'Motor_current']
         additional_sensors = ['COMP']
@@ -119,7 +124,9 @@ def generate_data(version=2):
     print("Finished saving")
 
 if __name__ == '__main__':
-    generate_data(version=2)
-    generate_data(version=3)
-    load_data(version=2)
-    load_data(version=3)
+    # generate_data(version=2)
+    # generate_data(version=3)
+    # load_data(version=2)
+    # load_data(version=3)
+    generate_data(version=1)
+    load_data(version=1)
