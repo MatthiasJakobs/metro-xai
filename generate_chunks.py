@@ -60,13 +60,11 @@ def generate_data(version=2):
     final_metro.reset_index(drop=True, inplace=True)
 
     if version == 1:
-        analog_sensors = ['TP2', 'TP3', 'H1', 'DV_pressure', 'Reservoirs',
-                        'Oil_temperature', 'Flowmeter', 'Motor_current']
+        analog_sensors = ['TP2', 'TP3', 'H1', 'DV_pressure', 'Reservoirs', 'Oil_temperature', 'Flowmeter', 'Motor_current']
         additional_sensors = ['COMP']
-        cutoff_date = np.datetime64('2022-02-01T00:00:00.000000000')
+        cutoff_date = np.datetime64('2022-02-14T00:00:00.000000000')
     elif version == 2:
-        analog_sensors = ['TP2', 'TP3', 'H1', 'DV_pressure', 'Reservoirs',
-                        'Oil_temperature', 'Flowmeter', 'Motor_current']
+        analog_sensors = ['TP2', 'TP3', 'H1', 'DV_pressure', 'Reservoirs', 'Oil_temperature', 'Flowmeter', 'Motor_current']
         additional_sensors = ['COMP']
         cutoff_date = np.datetime64('2022-06-01T00:00:00.000000000')
     else:
