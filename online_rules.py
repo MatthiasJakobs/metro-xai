@@ -8,6 +8,7 @@ from generate_chunks import load_data
 from train_models import ModelTrainer
 from failure_detection import simple_lowpass_filter
 from sklearn.tree import DecisionTreeClassifier, export_text, plot_tree
+from sklearn.metrics import confusion_matrix
 from plotting import default_plot
 
 MIN_SUPP = 0.999
@@ -32,6 +33,18 @@ def compare_trees(tree1, tree2):
 
     return True
 
+def describe_tree(tree, x, y, feature_names):
+    size = compute_size(tree)
+    n_wrong, error_rate = compute_error_rate(tree, x, y)
+    textual_representation = export_text(tree, feature_names=feature_names)
+    print('---'*5)
+    print('Wrong predictions', n_wrong)
+    print('Error rate', error_rate)
+    print('Number of leafs', size)
+    print(textual_representation)
+    print('---'*5)
+
+
 def compute_size(tree):
     tree = tree.tree_
     leaf_count = 0
@@ -41,6 +54,12 @@ def compute_size(tree):
             leaf_count += 1
     
     return leaf_count
+
+def compute_error_rate(tree, x, y):
+    preds = tree.predict(x)
+    tn, fp, fn, tp = confusion_matrix(y, preds, normalize=None).ravel().tolist()
+    wrong_predictions = fp + fn
+    return wrong_predictions, (fp+fn) / len(y)
 
 def find_unique_trees(X, y, n=50, random_state=None):
     min_depth = 100
@@ -116,14 +135,16 @@ class OnlineRL:
 
             if failure_stop:
                  print(f'Stop to observe failure at t={t}, these are the rules:')
-                 sizes = [compute_size(tree) for tree in trees]
-                 print(sizes)
-                 for tidx, tree in enumerate(trees[:3]):
-                     print(export_text(tree, feature_names=feature_names))
-                     fig, ax = plt.subplots(1,1)
-                     plot_tree(tree, ax=ax, feature_names=feature_names, class_names=['no failure', 'failure'])
-                     fig.tight_layout()
-                     fig.savefig(f'plots/{self.save_prefix}_rules_t={t}_{tidx}.png')
+                 for tree in trees:
+                    describe_tree(tree, _x, _y, feature_names)
+                #  sizes = [compute_size(tree) for tree in trees]
+                #  print(sizes)
+                #  for tidx, tree in enumerate(trees[:3]):
+                #      print(export_text(tree, feature_names=feature_names))
+                #      fig, ax = plt.subplots(1,1)
+                #      plot_tree(tree, ax=ax, feature_names=feature_names, class_names=['no failure', 'failure'])
+                #      fig.tight_layout()
+                #      fig.savefig(f'plots/{self.save_prefix}_rules_t={t}_{tidx}.png')
                  buffer = []
                  trees = []
                  state['n_trees'] = 0
