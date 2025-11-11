@@ -1,0 +1,24 @@
+Load data (MetroPT1)
+Start to observe failure at t=3586
+Stop to observe failure at t=3631, these are the rules:
+---------------
+Wrong predictions 38
+Error rate 0.0006916006916006917
+Number of leafs 2
+|--- Oil_temperature_max <= 97.49
+|   |--- class: 0.0
+|--- Oil_temperature_max >  97.49
+|   |--- class: 1.0
+
+---------------
+---------------
+Wrong predictions 44
+Error rate 0.0008008008008008008
+Number of leafs 2
+|--- Reservoirs_max <= 1.81
+|   |--- class: 0.0
+|--- Reservoirs_max >  1.81
+|   |--- class: 1.0
+
+---------------
+ 

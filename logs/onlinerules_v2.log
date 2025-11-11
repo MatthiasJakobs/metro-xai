@@ -1,0 +1,103 @@
+Load data (MetroPT2)
+done
+Calculate model outputs
+ 
+Start OnlineRL with all features
+Start to observe failure at t=893
+Stop to observe failure at t=996, these are the rules:
+---------------
+Wrong predictions 4
+Error rate 9.043022178011891e-05
+Number of leafs 2
+|--- Flowmeter_mean <= 1.95
+|   |--- class: 0.0
+|--- Flowmeter_mean >  1.95
+|   |--- class: 1.0
+
+---------------
+---------------
+Wrong predictions 4
+Error rate 9.043022178011891e-05
+Number of leafs 2
+|--- Flowmeter_max <= 16.05
+|   |--- class: 0.0
+|--- Flowmeter_max >  16.05
+|   |--- class: 1.0
+
+---------------
+---------------
+Wrong predictions 5
+Error rate 0.00011303777722514864
+Number of leafs 2
+|--- Oil_temperature_max <= 73.49
+|   |--- class: 0.0
+|--- Oil_temperature_max >  73.49
+|   |--- class: 1.0
+
+---------------
+Start to observe failure at t=10360
+Stop to observe failure at t=11131, these are the rules:
+---------------
+Wrong predictions 4
+Error rate 7.378712414683638e-05
+Number of leafs 2
+|--- Flowmeter_max <= 16.18
+|   |--- class: 0.0
+|--- Flowmeter_max >  16.18
+|   |--- class: 1.0
+
+---------------
+---------------
+Wrong predictions 4
+Error rate 7.378712414683638e-05
+Number of leafs 2
+|--- Flowmeter_mean <= 1.42
+|   |--- class: 0.0
+|--- Flowmeter_mean >  1.42
+|   |--- class: 1.0
+
+---------------
+done
+ 
+Start OnlineRL without Flowmeter
+Start to observe failure at t=893
+Stop to observe failure at t=996, these are the rules:
+---------------
+Wrong predictions 5
+Error rate 0.00011303777722514864
+Number of leafs 2
+|--- Oil_temperature_max <= 73.49
+|   |--- class: 0.0
+|--- Oil_temperature_max >  73.49
+|   |--- class: 1.0
+
+---------------
+Start to observe failure at t=10360
+Stop to observe failure at t=11131, these are the rules:
+---------------
+Wrong predictions 4
+Error rate 7.378712414683638e-05
+Number of leafs 3
+|--- Motor_current_min <= 0.01
+|   |--- class: 1.0
+|--- Motor_current_min >  0.01
+|   |--- TP2_max <= 10.61
+|   |   |--- class: 0.0
+|   |--- TP2_max >  10.61
+|   |   |--- class: 1.0
+
+---------------
+---------------
+Wrong predictions 4
+Error rate 7.378712414683638e-05
+Number of leafs 3
+|--- DV_pressure_mean <= 0.00
+|   |--- TP2_max <= 10.61
+|   |   |--- class: 0.0
+|   |--- TP2_max >  10.61
+|   |   |--- class: 1.0
+|--- DV_pressure_mean >  0.00
+|   |--- class: 1.0
+
+---------------
+ 

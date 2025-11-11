@@ -265,9 +265,15 @@ def run_pt1_new():
     print(' ')
 
 
-def main():
-    run_pt1_new()
-    run_pt2_new()
+def main(version=2):
+    if version == 1:
+        run_pt1_new()
+    if version == 2:
+        run_pt2_new()
 
 if __name__ == '__main__':
-    main()
+    import argparse
+    parser = argparse.ArgumentParser(description='Run AMRules extraction')
+    parser.add_argument('--version', '-v', type=int, choices=[1,2], default=2, help='PT version (1 or 2)')
+    args = parser.parse_args()
+    main(version=args.version)
