@@ -1,0 +1,12 @@
+Load data
+Calculate model outputs
+For failure (1607400, 1792800) there are 72 unique rules. Reporting the highest-support rule:
+Oil_temperature ≤ 64.6000 -> Support: 4769 (0.025722761596548006) | error: 180631 (0.974277238403452)
+Motor_current ≤ -0.0000 -> Support: 1962 (0.01058252427184466) | error: 183438 (0.9894174757281553)
+H1 ≤ 9.1000 -> Support: 1425 (0.007686084142394822) | error: 183975 (0.9923139158576052)
+ 
+For failure (18648000, 20035800) there are 85 unique rules. Reporting the highest-support rule:
+Oil_temperature > 69.9000 -> Support: 251748 (0.18140077821011674) | error: 1136052 (0.8185992217898833)
+Motor_current ≤ 0.0000 -> Support: 5327 (0.0038384493442859204) | error: 1382473 (0.9961615506557141)
+Oil_temperature > 59.6000 -> Support: 2718 (0.001958495460440986) | error: 1385082 (0.998041504539559)
+ 
