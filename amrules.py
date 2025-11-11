@@ -230,7 +230,7 @@ def describe_failures(failure_bounds, rule_dict):
 
         r = {k: v for k, v in rule_dict.items() if k >= fail_start and k <= fail_stop }
         r = parse_rules(r)
-        r = {k: ' AND '.join(v) for k, v in r.items()}
+        r = {k: ' or '.join(v) for k, v in r.items()}
         if len(r) == 0:
             print(f'No rule fitting failure {(fail_start, fail_stop)}')
             continue
