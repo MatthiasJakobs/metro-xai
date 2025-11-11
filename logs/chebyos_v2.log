@@ -3,10 +3,10 @@ Calculate model outputs
 For failure (1607400, 1792800) there are 107 unique rules. Reporting the highest-support rule:
 TP3 ≤ 7.6000 -> Support: 47851 (0.2580960086299892) | error: 137549 (0.7419039913700108)
 Reservoirs > 6.7000 -> Support: 28165 (0.15191477885652643) | error: 157235 (0.8480852211434736)
-TP3 ≤ 7.6000 AND TP3 ≤ 2.3000 -> Support: 20138 (0.10861920172599784) | error: 165262 (0.8913807982740022)
+TP3 ≤ 7.6000 or TP3 ≤ 2.3000 -> Support: 20138 (0.10861920172599784) | error: 165262 (0.8913807982740022)
  
 For failure (18648000, 20035800) there are 684 unique rules. Reporting the highest-support rule:
 Reservoirs > 6.7000 -> Support: 795297 (0.573063121487246) | error: 592503 (0.426936878512754)
-Reservoirs > 6.7000 AND H1 ≤ 8.9000 -> Support: 111257 (0.0801678916270356) | error: 1276543 (0.9198321083729644)
-Reservoirs > 6.7000 AND Oil_temperature > 61.9000 -> Support: 92783 (0.06685617524138925) | error: 1295017 (0.9331438247586108)
+Reservoirs > 6.7000 or H1 ≤ 8.9000 -> Support: 111257 (0.0801678916270356) | error: 1276543 (0.9198321083729644)
+Reservoirs > 6.7000 or Oil_temperature > 61.9000 -> Support: 92783 (0.06685617524138925) | error: 1295017 (0.9331438247586108)
  

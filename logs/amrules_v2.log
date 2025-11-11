@@ -1,12 +1,12 @@
 Load data
 Calculate model outputs
 For failure (1607400, 1792800) there are 110 unique rules. Reporting the highest-support rule:
-Reservoirs > 6.7000 AND Oil_temperature ≤ 77.6000 -> Support: 20342 (0.10971952535059332) | error: 165058 (0.8902804746494067)
+Reservoirs > 6.7000 or Oil_temperature ≤ 77.6000 -> Support: 20342 (0.10971952535059332) | error: 165058 (0.8902804746494067)
 Reservoirs > 6.7000 -> Support: 8844 (0.04770226537216828) | error: 176556 (0.9522977346278317)
-Reservoirs > 6.7000 AND Oil_temperature ≤ 77.6000 AND Reservoirs > 8.2000 -> Support: 2304 (0.012427184466019418) | error: 183096 (0.9875728155339806)
+Reservoirs > 6.7000 or Oil_temperature ≤ 77.6000 or Reservoirs > 8.2000 -> Support: 2304 (0.012427184466019418) | error: 183096 (0.9875728155339806)
  
 For failure (18648000, 20035800) there are 891 unique rules. Reporting the highest-support rule:
-Reservoirs > 6.7000 AND Oil_temperature ≤ 77.6000 -> Support: 580835 (0.418529326992362) | error: 806965 (0.581470673007638)
-Reservoirs > 6.7000 AND Oil_temperature ≤ 77.6000 AND Oil_temperature ≤ 78.1000 -> Support: 157545 (0.11352140077821012) | error: 1230255 (0.8864785992217898)
-Reservoirs > 6.7000 AND Oil_temperature ≤ 77.6000 AND Flowmeter ≤ 19.2000 -> Support: 88829 (0.06400706153624441) | error: 1298971 (0.9359929384637555)
+Reservoirs > 6.7000 or Oil_temperature ≤ 77.6000 -> Support: 580835 (0.418529326992362) | error: 806965 (0.581470673007638)
+Reservoirs > 6.7000 or Oil_temperature ≤ 77.6000 or Oil_temperature ≤ 78.1000 -> Support: 157545 (0.11352140077821012) | error: 1230255 (0.8864785992217898)
+Reservoirs > 6.7000 or Oil_temperature ≤ 77.6000 or Flowmeter ≤ 19.2000 -> Support: 88829 (0.06400706153624441) | error: 1298971 (0.9359929384637555)
  
