@@ -1,7 +1,7 @@
 Load data
 Calculate model outputs
-For failure (6454800, 6535800) there are 276 unique rules. Reporting the highest-support rule:
-Oil_temperature ≤ 88.2000 -> Support: 3056 (0.0377283950617284) | error: 77944 (0.9622716049382716)
-Oil_temperature ≤ 88.2000 or TP3 ≤ 1.1000 and Oil_temperature ≤ 73.8000 -> Support: 1803 (0.02225925925925926) | error: 79197 (0.9777407407407407)
-Oil_temperature ≤ 88.2000 or TP3 ≤ 1.1000 and Oil_temperature ≤ 76.6000 -> Support: 1802 (0.022246913580246913) | error: 79198 (0.9777530864197531)
+For failure (6454800, 6535800) there are 18 unique rules. Reporting the highest-support rule:
+Oil_temperature ≤ 88.2000 -> Support: 37550 (0.46358024691358024) | error: 43450 (0.5364197530864198)
+Flowmeter ≤ 32.8000 and Oil_temperature > 68.7000 and TP3 > 3.7000 -> Support: 23108 (0.28528395061728395) | error: 57892 (0.714716049382716)
+Oil_temperature > 89.9000 and Oil_temperature > 82.9000 and TP3 > 4.5000 and TP2 > 7.3000 -> Support: 1813 (0.022382716049382717) | error: 79187 (0.9776172839506173)
  

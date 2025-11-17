@@ -40,7 +40,7 @@ def get_model_template(model_name, **params):
     amrules = rules.AMRules(
         splitter=tree.splitter.TEBSTSplitter(1),
         pred_type="mean",
-        ordered_rule_set=False,
+        ordered_rule_set=True,
         n_min=100,
         delta=0.05,
         min_samples_split=15,

@@ -1,12 +1,12 @@
 Load data
 Calculate model outputs
-For failure (1607400, 1792800) there are 110 unique rules. Reporting the highest-support rule:
-Reservoirs > 6.7000 or Oil_temperature ≤ 77.6000 -> Support: 20342 (0.10971952535059332) | error: 165058 (0.8902804746494067)
-Reservoirs > 6.7000 -> Support: 8844 (0.04770226537216828) | error: 176556 (0.9522977346278317)
-Reservoirs > 6.7000 or Oil_temperature ≤ 77.6000 or Reservoirs > 8.2000 -> Support: 2304 (0.012427184466019418) | error: 183096 (0.9875728155339806)
+For failure (1607400, 1792800) there are 60 unique rules. Reporting the highest-support rule:
+TP3 > 6.7000 -> Support: 39479 (0.2129395900755124) | error: 145921 (0.7870604099244876)
+Reservoirs ≤ 2.4000 -> Support: 23631 (0.12745954692556635) | error: 161769 (0.8725404530744336)
+Oil_temperature > 65.7000 -> Support: 2666 (0.014379719525350594) | error: 182734 (0.9856202804746494)
  
-For failure (18648000, 20035800) there are 891 unique rules. Reporting the highest-support rule:
-Reservoirs > 6.7000 or Oil_temperature ≤ 77.6000 -> Support: 580835 (0.418529326992362) | error: 806965 (0.581470673007638)
-Reservoirs > 6.7000 or Oil_temperature ≤ 77.6000 or Oil_temperature ≤ 78.1000 -> Support: 157545 (0.11352140077821012) | error: 1230255 (0.8864785992217898)
-Reservoirs > 6.7000 or Oil_temperature ≤ 77.6000 or Flowmeter ≤ 19.2000 -> Support: 88829 (0.06400706153624441) | error: 1298971 (0.9359929384637555)
+For failure (18648000, 20035800) there are 6 unique rules. Reporting the highest-support rule:
+TP3 > 6.7000 -> Support: 1384968 (0.9979593601383485) | error: 2832 (0.0020406398616515348)
+H1 ≤ 8.4000 -> Support: 642 (0.0004626026805015132) | error: 1387158 (0.9995373973194985)
+Oil_temperature > 45.4000 -> Support: 65 (4.683671998847096e-05) | error: 1387735 (0.9999531632800115)
  
