@@ -2,5 +2,6 @@ torch
 seedpy
 numpy
 git+https://github.com/MatthiasJakobs/tsx@dev
+git+https://github.com/MatthiasJakobs/plotz
 plotly
 nbformat
