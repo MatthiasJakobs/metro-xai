@@ -16,3 +16,4 @@ no_flowmeter_failures.csv
 models/*
 !models/pt2_TCN.pickle
 !models/pt3_TCN.pickle
+.ipynb_checkpoints
