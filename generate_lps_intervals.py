@@ -2,7 +2,11 @@ import pandas as pd
 import numpy as np
 
 def print_intervals(version=2):
-    if version == 2:
+    if version == 1:
+        print('=== MetroPT 1 ===')
+        final_metro = pd.read_csv('MetroPT1.csv')
+        test_date = np.datetime64('2022-02-14T00:00:00.000000000')
+    elif version == 2:
         print('=== MetroPT 2 ===')
         final_metro = pd.read_csv('MetroPT2.csv')
         test_date = np.datetime64("2022-06-01T00:00:00.000000000")
@@ -38,5 +42,6 @@ def print_intervals(version=2):
         print(i)
 
 if __name__ == '__main__':
-    print_intervals(version=2)
-    print_intervals(version=3)
+    print_intervals(version=1)
+    #print_intervals(version=2)
+    #print_intervals(version=3)

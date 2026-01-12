@@ -10,16 +10,25 @@ from failure_detection import simple_lowpass_filter
 from sklearn.tree import DecisionTreeClassifier, export_text, plot_tree
 from sklearn.metrics import confusion_matrix
 from plotting import default_plot
+from os.path import exists
 
 MIN_SUPP = 0.999
 
 def construct_features(X, axis=-1):
-    # Assume: X.shape = (batch_size, L, n_channels)
-    avg = np.mean(X, axis=axis, keepdims=True)
-    var = np.var(X, axis=axis, keepdims=True)
-    mx = np.max(X, axis=axis, keepdims=True)
-    mn = np.min(X, axis=axis, keepdims=True)
-    return np.concatenate([avg, var, mx, mn], axis=axis)
+    # Assume: X.shape = (n_batches, L, n_channels)
+    # Do this thing batched to save memory
+    batch_size = 1000
+    to_return = []
+    n_batches = X.shape[0]
+    for _ in range(0, n_batches, batch_size):
+        avg = np.mean(X[:batch_size], axis=axis, keepdims=True)
+        var = np.var(X[:batch_size], axis=axis, keepdims=True)
+        mx = np.max(X[:batch_size], axis=axis, keepdims=True)
+        mn = np.min(X[:batch_size], axis=axis, keepdims=True)
+        to_return.append(np.concatenate([avg, var, mx, mn], axis=axis))
+        X = X[batch_size:]
+
+    return np.concatenate(to_return, axis=0)
 
 def compare_trees(tree1, tree2):
     if tree1.get_depth() != tree2.get_depth():
@@ -35,11 +44,12 @@ def compare_trees(tree1, tree2):
 
 def describe_tree(tree, x, y, feature_names):
     size = compute_size(tree)
-    n_wrong, error_rate = compute_error_rate(tree, x, y)
+    n_wrong, error_rate, support = compute_error_rate(tree, x, y)
     textual_representation = export_text(tree, feature_names=feature_names)
     print('---'*5)
     print('Wrong predictions', n_wrong)
     print('Error rate', error_rate)
+    print('Support', support)
     print('Number of leafs', size)
     print(textual_representation)
     print('---'*5)
@@ -59,7 +69,7 @@ def compute_error_rate(tree, x, y):
     preds = tree.predict(x)
     tn, fp, fn, tp = confusion_matrix(y, preds, normalize=None).ravel().tolist()
     wrong_predictions = fp + fn
-    return wrong_predictions, (fp+fn) / len(y)
+    return wrong_predictions, (fp+fn) / len(y), (tn+tp) / len(y)
 
 def find_unique_trees(X, y, n=50, random_state=None):
     min_depth = 100
@@ -74,6 +84,67 @@ def find_unique_trees(X, y, n=50, random_state=None):
                 trees.append(tree)
     return trees
 
+class BaseHistoryManager:
+
+    def __init__(self, random_state=None):
+        self.rng = np.random.RandomState(random_state)
+
+    def add_initial_history(self, initial_history):
+        self.history = initial_history
+        self.reservoir_length = len(initial_history)
+        print('Reservoir size:', self.reservoir_length)
+
+    def add_item(self, t, item):
+        if self.should_add(t):
+            self.update_history(item)
+
+    def update_history(self, item):
+        raise NotImplementedError()
+
+    def should_add(self, t):
+        raise NotImplementedError()
+
+    def get_history(self):
+        return self.history
+
+# This class just adds every item to the history, as an upper bound on expected performance
+class InfiniteHistoryManager(BaseHistoryManager):
+
+    def update_history(self, item):
+        self.history.append(item)
+
+    def should_add(self, t):
+        return True
+
+class UniformHistoryManager(BaseHistoryManager):
+    
+    def should_add(self, t):
+        # Notation from original paper
+        K = self.reservoir_length
+        n = t
+
+        # Roll the dice
+        p_K = K / (n+K+1)
+
+        return self.rng.rand() >= p_K
+
+    def update_history(self, item):
+        # Draw random indice and replace with item
+        index = self.rng.randint(self.reservoir_length)
+        self.history[index] = item
+
+class ExponentialHistoryManager(UniformHistoryManager):
+
+    def should_add(self, t):
+        # Notation from original paper
+        K = self.reservoir_length
+        beta = 1.1
+
+        # Roll the dice
+        p_K = K * (1-np.exp(-1 / (beta * K)))
+
+        return self.rng.rand() >= p_K
+
 class OnlineRL:
 
     def __init__(self, warning_thresh=0.01, failure_thresh=0.5, random_state=182616, save_prefix='flowmeter'):
@@ -81,9 +152,12 @@ class OnlineRL:
         self.failure_thresh = failure_thresh
         self.rng = np.random.RandomState(random_state)
         self.save_prefix = save_prefix
+        #self.history_manager = UniformHistoryManager(random_state) 
+        #self.history_manager = InfiniteHistoryManager(random_state)
+        self.history_manager = ExponentialHistoryManager(random_state)
 
     def run(self, output, X, history, feature_names):
-        self.log = []
+        self.history_manager.add_initial_history(history)
 
         # Buffer stores the datapoints during warning
         buffer = []
@@ -98,8 +172,6 @@ class OnlineRL:
             failure_start = output[t] > self.failure_thresh and output[t-1] <= self.failure_thresh
             failure_stop = output[t] <= self.failure_thresh and output[t-1] > self.failure_thresh
 
-            state = {'t': t, 'output': output[t], 'is_warning': is_warning, 'is_failure': is_failure, 'failure_increase': False}
-
             if failure_start:
                 print(f'Start to observe failure at t={t}')
 
@@ -111,16 +183,17 @@ class OnlineRL:
                     global_buffer.append(np.concatenate(buffer))
                 # Reset buffer and add to history
                 buffer = []
-                history.append(np.expand_dims(X[t], 0))
+                #history.append(np.expand_dims(X[t], 0))
+                self.history_manager.add_item(t, np.expand_dims(X[t], 0))
 
             if is_failure:
-                X_good = np.concatenate(history)
+                X_good = np.concatenate(self.history_manager.get_history())
+                #X_good = np.concatenate(history)
                 y_good = np.zeros((X_good.shape[0]))
                 X_anom = np.concatenate(buffer)
                 y_anom = np.ones((X_anom.shape[0]))
                 _x, _y = np.concatenate([X_good, X_anom]), np.concatenate([y_good, y_anom])
                 _x = _x.reshape(_x.shape[0], -1)
-                state['failure_increase'] = True
 
                 # See if any rule still applies
                 new_trees = []
@@ -137,76 +210,51 @@ class OnlineRL:
                  print(f'Stop to observe failure at t={t}, these are the rules:')
                  for tree in trees:
                     describe_tree(tree, _x, _y, feature_names)
-                #  sizes = [compute_size(tree) for tree in trees]
-                #  print(sizes)
-                #  for tidx, tree in enumerate(trees[:3]):
-                #      print(export_text(tree, feature_names=feature_names))
-                #      fig, ax = plt.subplots(1,1)
-                #      plot_tree(tree, ax=ax, feature_names=feature_names, class_names=['no failure', 'failure'])
-                #      fig.tight_layout()
-                #      fig.savefig(f'plots/{self.save_prefix}_rules_t={t}_{tidx}.png')
                  buffer = []
                  trees = []
-                 state['n_trees'] = 0
-                 state['rules'] = []
-
-            self.log.append(state)
-
-        # Fit global rules
-
-        # X_good = np.concatenate(history)
-        # y_good = np.zeros((X_good.shape[0]))
-        # X_anom = np.concatenate(global_buffer)
-        # y_anom = np.ones((X_anom.shape[0]))
-        # _x, _y = np.concatenate([X_good, X_anom]), np.concatenate([y_good, y_anom])
-        # _x = _x.reshape(_x.shape[0], -1)
-
-        # trees = find_unique_trees(_x, _y, random_state=self.rng)
-        # print('--- Global rule(s) found: ---')
-        # for idx, tree in enumerate(trees):
-        #     print(export_text(tree, feature_names=feature_names))
-            # fig, ax = default_plot(subplots=(1,1), height_fraction=1.5)
-            # plot_tree(tree, ax=ax, feature_names=feature_names, class_names=['no failure', 'failure'], precision=2)
-            # fig.tight_layout()
-            # fig.savefig(f'plots/{self.save_prefix}_globalrules_{idx}.pdf', transparent=True)
-            # with open(f'models/{self.save_prefix}_tree_{idx}.pickle', 'wb') as f:
-            #     pickle.dump(tree, f)
-
-        self.log = pd.DataFrame(self.log)
 
 def run_pt2_new():
     model = ModelTrainer(f'configs/PT2_TCN.json').fit()
 
     print('Load data (MetroPT2)')
-    train_chunks, training_chunk_dates, test_chunks, test_chunk_dates = load_data(version=model.version, scaler=model.scaler)
+
+    # Start with unnormalized chunks first to save memory
     with open('data/pt2_train_chunks_unnormalized.pkl', 'rb') as f:
         train_chunks_unnormalized = pickle.load(f)
+    train_chunks_features = construct_features(train_chunks_unnormalized, axis=1).swapaxes(1,2)
+    del train_chunks_unnormalized
+
     with open('data/pt2_test_chunks_unnormalized.pkl', 'rb') as f:
         test_chunks_unnormalized = pickle.load(f)
-    print('done')
+    test_chunks_features = construct_features(test_chunks_unnormalized, axis=1).swapaxes(1,2)
+    del test_chunks_unnormalized
+
+    if not exists('data/pt2_train_errors.npy') or not exists('data/pt2_test_errors.npy'):
+        print('Calculate model outputs')
+        train_chunks, _, test_chunks, _ = load_data(version=model.version, scaler=model.scaler)
+        val_size = int(0.3 * len(train_chunks))
+        train_errors = model.calc_loss(train_chunks[-val_size:], train_chunks[-val_size:], average=False).mean(axis=(1,2))
+        test_errors = model.calc_loss(test_chunks, test_chunks, average=False).mean(axis=(1,2))
+        np.save('data/pt2_train_errors.npy', train_errors)
+        np.save('data/pt2_test_errors.npy', test_errors)
+    else:
+        train_errors = np.load('data/pt2_train_errors.npy')
+        test_errors = np.load('data/pt2_test_errors.npy')
+
+    print('done loading data')
+
+    alpha = 0.15
+    anom = np.quantile(train_errors, q=0.99) * 3
+    binary_output = (test_errors > anom).astype(np.int8)
+    output = simple_lowpass_filter(binary_output,alpha)
 
     channel_names = ['TP2', 'TP3', 'H1', 'DV_pressure', 'Reservoirs', 'Oil_temperature', 'Flowmeter', 'Motor_current', 'COMP']
-
-    train_chunks_features = construct_features(train_chunks_unnormalized, axis=1).swapaxes(1,2)
-    test_chunks_features = construct_features(test_chunks_unnormalized, axis=1).swapaxes(1,2)
 
     transformed_feature_names = [[fname+'_mean', fname+'_var', fname+'_max', fname+'_min'] for fname in channel_names]
     transformed_feature_names = sum(transformed_feature_names, [])
 
-    alpha = 0.15
-
-    print('Calculate model outputs')
-    val_size = int(0.3 * len(train_chunks))
-    train_errors = model.calc_loss(train_chunks[-val_size:], train_chunks[-val_size:], average=False).mean(axis=(1,2))
-    test_errors = model.calc_loss(test_chunks, test_chunks, average=False).mean(axis=(1,2))
-
-    anom = np.quantile(train_errors, q=0.99) * 3
-    binary_output = (test_errors > anom).astype(np.int8)
-
-    output = simple_lowpass_filter(binary_output,alpha)
-
     # History stores the "good" examples assumed to be non-anomalous
-    history = [train_chunks_features]
+    history = list(np.expand_dims(train_chunks_features, 1))
 
     print(' ')
     print('Start OnlineRL with all features')
@@ -221,7 +269,7 @@ def run_pt2_new():
     feature_indices = np.array([0, 1, 2, 3, 4, 5, 7, 8])
 
     # History stores the "good" examples assumed to be non-anomalous
-    history = [train_chunks_features[:, feature_indices]]
+    history = list(np.expand_dims(train_chunks_features[:, feature_indices], 1))
     transformed_feature_names = [tfn for tfn in transformed_feature_names if 'Flowmeter' not in tfn]
 
     orl = OnlineRL(save_prefix='noflowmeter')
@@ -232,33 +280,39 @@ def run_pt1_new():
     model = ModelTrainer(f'configs/PT1_TCN.json').fit()
 
     print('Load data (MetroPT1)')
-    train_chunks, training_chunk_dates, test_chunks, test_chunk_dates = load_data(version=model.version, scaler=model.scaler)
     with open('data/pt1_train_chunks_unnormalized.pkl', 'rb') as f:
         train_chunks_unnormalized = pickle.load(f)
+    train_chunks_features = construct_features(train_chunks_unnormalized, axis=1).swapaxes(1,2)
+    del train_chunks_unnormalized
+
     with open('data/pt1_test_chunks_unnormalized.pkl', 'rb') as f:
         test_chunks_unnormalized = pickle.load(f)
+    test_chunks_features = construct_features(test_chunks_unnormalized, axis=1).swapaxes(1,2)
+    del test_chunks_unnormalized
+
+    if not exists('data/pt1_train_errors.npy') or not exists('data/pt1_test_errors.npy'):
+        train_chunks, _, test_chunks, _ = load_data(version=model.version, scaler=model.scaler)
+        val_size = int(0.3 * len(train_chunks))
+        train_errors = model.calc_loss(train_chunks[-val_size:], train_chunks[-val_size:], average=False).mean(axis=(1,2))
+        test_errors = model.calc_loss(test_chunks, test_chunks, average=False).mean(axis=(1,2))
+        np.save('data/pt1_train_errors.npy', train_errors)
+        np.save('data/pt1_test_errors.npy', test_errors)
+    else:
+        train_errors = np.load('data/pt1_train_errors.npy')
+        test_errors = np.load('data/pt1_test_errors.npy')
 
     channel_names = ['TP2', 'TP3', 'H1', 'DV_pressure', 'Reservoirs', 'Oil_temperature', 'Flowmeter', 'Motor_current', 'COMP']
-
-    train_chunks_features = construct_features(train_chunks_unnormalized, axis=1).swapaxes(1,2)
-    test_chunks_features = construct_features(test_chunks_unnormalized, axis=1).swapaxes(1,2)
 
     transformed_feature_names = [[fname+'_mean', fname+'_var', fname+'_max', fname+'_min'] for fname in channel_names]
     transformed_feature_names = sum(transformed_feature_names, [])
 
     alpha = 0.1
-
-    val_size = int(0.3 * len(train_chunks))
-    train_errors = model.calc_loss(train_chunks[-val_size:], train_chunks[-val_size:], average=False).mean(axis=(1,2))
-    test_errors = model.calc_loss(test_chunks, test_chunks, average=False).mean(axis=(1,2))
-
     anom = np.quantile(train_errors, q=0.99) * 2
     binary_output = (test_errors > anom).astype(np.int8)
-
     output = simple_lowpass_filter(binary_output,alpha)
 
     # History stores the "good" examples assumed to be non-anomalous
-    history = [train_chunks_features]
+    history = list(np.expand_dims(train_chunks_features, 1))
 
     orl = OnlineRL(save_prefix='pt1')
     orl.run(output, test_chunks_features, history, transformed_feature_names)

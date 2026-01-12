@@ -5,3 +5,6 @@ git+https://github.com/MatthiasJakobs/tsx@dev
 git+https://github.com/MatthiasJakobs/plotz
 plotly
 nbformat
+matplotlib
+scikit-learn
+skorch
